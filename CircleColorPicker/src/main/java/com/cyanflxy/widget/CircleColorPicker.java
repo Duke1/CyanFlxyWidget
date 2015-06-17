@@ -262,6 +262,10 @@ public class CircleColorPicker extends View {
     private boolean mIsDownInPicker;
     private boolean mIsDownInBright;
 
+    public int getColor(){
+        return mBrightColor;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         float x = event.getX() - mCenter.x;
