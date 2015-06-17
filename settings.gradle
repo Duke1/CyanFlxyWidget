@@ -1,1 +1,1 @@
-include ':TestApp'
+include ':TestApp', ':CircleColorPicker'
