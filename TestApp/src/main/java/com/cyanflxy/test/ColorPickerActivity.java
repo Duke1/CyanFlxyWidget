@@ -3,16 +3,16 @@ package com.cyanflxy.test;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
 
 import com.cyanflxy.widget.CircleColorPicker;
 
 public class ColorPickerActivity extends Activity
-        implements CircleColorPicker.OnColorSelectedListener {
+        implements CircleColorPicker.OnColorSelectedListener, View.OnClickListener {
 
-    private TextView mColorView;
-
+    private TextView colorView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,10 +21,16 @@ public class ColorPickerActivity extends Activity
 
         setContentView(R.layout.activity_color_picker);
 
-        CircleColorPicker mColorPicker = (CircleColorPicker) findViewById(R.id.color_picker);
-        mColorPicker.setOnColorSelectedListener(this);
+        TextView title = (TextView) findViewById(R.id.title);
+        title.setText("ColorPicker");
+        findViewById(R.id.back).setOnClickListener(this);
 
-        mColorView = (TextView) findViewById(R.id.color);
+        CircleColorPicker colorPicker = (CircleColorPicker) findViewById(R.id.color_picker);
+        colorPicker.setOnColorSelectedListener(this);
+
+        colorView = (TextView) findViewById(R.id.color);
+
+        onColorSelected(colorPicker.getColor());
     }
 
     @Override
@@ -34,19 +40,26 @@ public class ColorPickerActivity extends Activity
         int blue = Color.blue(color);
 
         String str = String.format("0x%02X%02X%02X", red, green, blue);
-        mColorView.setText(str);
-        mColorView.setBackgroundColor(color);
+        colorView.setText(str);
+        colorView.setBackgroundColor(color);
 
         int max = Math.max(red, Math.max(green, blue));
         if (max == red) {
-            mColorView.setTextColor(Color.rgb(0, 255 - green, 255 - blue));
+            colorView.setTextColor(Color.rgb(0, 255 - green, 255 - blue));
         } else if (max == green) {
-            mColorView.setTextColor(Color.rgb(255 - red, 0, 255 - blue));
+            colorView.setTextColor(Color.rgb(255 - red, 0, 255 - blue));
         } else {
-            mColorView.setTextColor(Color.rgb(255 - red, 255 - green, 0));
+            colorView.setTextColor(Color.rgb(255 - red, 255 - green, 0));
         }
     }
 
-
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.back:
+                finish();
+                break;
+        }
+    }
 }
 

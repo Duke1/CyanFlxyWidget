@@ -6,9 +6,18 @@ Usage：RTFSC.
 
 ##效果图 DEMO
 
+
+###ColorPickerView
 圆形取色器控件
 
-![ColorPickerView](Picture/ColorPickerView.png)
+![ColorPickerView](ScreenShot/ColorPickerView.png)
+
+###SiriWave
+像Siri那样的波纹效果
+
+![SiriWave](ScreenShot/SiriWave.gif)
+
+
 
 
 ## License

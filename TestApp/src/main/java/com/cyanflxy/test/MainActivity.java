@@ -35,6 +35,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void initActivityList() {
         activityList = new LinkedList<ActivityInfo>();
         activityList.add(new ActivityInfo(ColorPickerActivity.class));
+        activityList.add(new ActivityInfo(SiriWaveActivity.class));
     }
 
     @Override
