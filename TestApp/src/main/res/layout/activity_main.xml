@@ -1,42 +1,9 @@
-<LinearLayout
+<?xml version="1.0" encoding="utf-8"?>
+<ListView
+    android:id="@+id/list"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    android:orientation="vertical">
-
-
-    <TextView
-        android:id="@+id/color"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Color"
-        android:textColor="#000000"
-        android:textSize="22sp"/>
-
-    <View
-        android:id="@+id/demo_color"
-        android:layout_width="match_parent"
-        android:layout_height="30dp"/>
-
-    <Button
-        android:id="@+id/get_state"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="获取"
-        android:textSize="20sp"/>
-
-    <Button
-        android:id="@+id/set_state"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="设置"
-        android:textSize="20sp"/>
-
-    <com.cyanflxy.widget.CircleColorPicker
-        android:id="@+id/color_picker"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="#888888"/>
-
-</LinearLayout>
+    android:background="#F0F0F0"
+    android:dividerHeight="1px"
+    android:divider="#101010"/>
