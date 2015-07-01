@@ -12,10 +12,10 @@ Usage：RTFSC.
 
 ![ColorPickerView](ScreenShot/ColorPickerView.png)
 
-###SiriWave
-像Siri那样的波纹效果
+###SineWave
+像Siri那样的正弦波纹效果
 
-![SiriWave](ScreenShot/SiriWave.gif)
+![SineWave](ScreenShot/SineWave.gif)
 
 
 

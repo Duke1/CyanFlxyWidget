@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
@@ -22,7 +21,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);//去掉标题栏
 
         setContentView(R.layout.activity_main);
 
@@ -35,7 +33,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void initActivityList() {
         activityList = new LinkedList<ActivityInfo>();
         activityList.add(new ActivityInfo(ColorPickerActivity.class));
-        activityList.add(new ActivityInfo(SiriWaveActivity.class));
+        activityList.add(new ActivityInfo(SineWaveActivity.class));
     }
 
     @Override

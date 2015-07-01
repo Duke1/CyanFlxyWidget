@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F0F0"
+    android:orientation="vertical">
+
+    <include layout="@layout/activity_title"/>
+
+    <com.cyanflxy.widget.SineWave
+        android:id="@+id/sine_wave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="150dp"
+        android:background="#D8D8D8"
+        app:horizontal_speed="200dp"
+        app:max_value="100"
+        app:min_amplitude="0.26"
+        app:vertical_restore_speed="0.5dp"
+        app:vertical_speed="1dp"
+        app:wave_color="#00F0D0"
+        app:wave_period="1.5"/>
+</LinearLayout>
