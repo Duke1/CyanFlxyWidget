@@ -10,9 +10,9 @@ import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
 
-import com.cyanflxy.widget.SineWave;
+import com.cyanflxy.widget.CircleAnimateView;
 
-public class SineWaveActivity extends Activity implements View.OnClickListener {
+public class CircleAnimationActivity extends Activity implements View.OnClickListener {
 
     private RecordThread recordThread;
 
@@ -21,16 +21,16 @@ public class SineWaveActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);//去掉标题栏
 
-        setContentView(R.layout.activity_sine_wave);
+        setContentView(R.layout.activity_circle_animation);
 
         TextView title = (TextView) findViewById(R.id.title);
-        title.setText("SineWave");
+        title.setText("CircleAnimation");
         findViewById(R.id.back).setOnClickListener(this);
 
-        SineWave sineWave = (SineWave) findViewById(R.id.sine_wave);
-        sineWave.startAni();
+        CircleAnimateView circleAnimateView = (CircleAnimateView) findViewById(R.id.circle_animation);
+        circleAnimateView.startListenAni();
 
-        recordThread = new RecordThread(sineWave);
+        recordThread = new RecordThread(circleAnimateView);
         recordThread.start();
 
     }
@@ -56,12 +56,12 @@ public class SineWaveActivity extends Activity implements View.OnClickListener {
         private final int SAMPLE_RATE_IN_HZ = 8000;
         private volatile boolean isRun = false;
 
-        private SineWave sineWave;
+        private CircleAnimateView circleAnimateView;
 
         @SuppressWarnings("deprecation")
-        public RecordThread(SineWave wave) {
+        public RecordThread(CircleAnimateView circleAnimateView) {
             super();
-            sineWave = wave;
+            this.circleAnimateView = circleAnimateView;
 
             bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE_IN_HZ,
                     AudioFormat.CHANNEL_CONFIGURATION_MONO,
@@ -91,7 +91,7 @@ public class SineWaveActivity extends Activity implements View.OnClickListener {
                 if (Float.compare(dB, 100) > 0) {
                     dB = 100;
                 }
-                sineWave.setValue(dB);
+                circleAnimateView.setValue(dB);
             }
             audioRecord.stop();
             audioRecord.release();

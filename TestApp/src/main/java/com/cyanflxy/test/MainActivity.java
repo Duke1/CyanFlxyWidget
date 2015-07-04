@@ -34,6 +34,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         activityList = new LinkedList<ActivityInfo>();
         activityList.add(new ActivityInfo(ColorPickerActivity.class));
         activityList.add(new ActivityInfo(SineWaveActivity.class));
+        activityList.add(new ActivityInfo(CircleAnimationActivity.class));
     }
 
     @Override
