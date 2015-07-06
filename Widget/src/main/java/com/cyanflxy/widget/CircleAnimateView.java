@@ -17,6 +17,7 @@
 package com.cyanflxy.widget;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -25,8 +26,6 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.RotateAnimation;
 import android.view.animation.ScaleAnimation;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -42,44 +41,30 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
     private ImageView mOuterCircle;
     private ImageView mInnerCircle;
 
-    private Animation mListenCircling;
-    private AnimationSet mOuterCircleAni;
+    private Animation mOuterCircleAni;
     private Animation mInnerCircleAni;
     private InnerAniInterpolator mInnerAniInterpolator;
 
-    private View mRootView;
-    private OnClickListener mOnClickListener;
+    private OnClickListener centerClickListener;
+
+    private float maxValue;
 
     public CircleAnimateView(Context c, AttributeSet attrs) {
         super(c, attrs);
         inflate(c, R.layout.voice_mic_animate_view, this);
 
-        initView(this);
+        mMicImg = (ImageView) findViewById(R.id.mic_img);
+        mOuterCircle = (ImageView) findViewById(R.id.outer_circle);
+        mInnerCircle = (ImageView) findViewById(R.id.inner_circle);
+
+        TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.CircleAnimateView);
+        maxValue = a.getFloat(R.styleable.CircleAnimateView_CircleAnimateView_max_value, 100);
+        a.recycle();
+
         initAnimate();
-
-//        TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.voice_style);
-//        float dist = a.getDimension(R.styleable.voice_style_bottom_distance, 0);
-//
-//        a.recycle();
-    }
-
-    private void initView(View rootView) {
-        mRootView = rootView;
-        mMicImg = (ImageView) rootView.findViewById(R.id.mic_img);
-        mMicImg.setOnClickListener(this);
-        mOuterCircle = (ImageView) rootView.findViewById(R.id.outer_circle);
-        mInnerCircle = (ImageView) rootView.findViewById(R.id.inner_circle);
-
     }
 
     private void initAnimate() {
-        mListenCircling = new RotateAnimation(0f, -360f,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f);
-        mListenCircling.setDuration(2000);
-        mListenCircling.setRepeatCount(Animation.INFINITE);
-        mListenCircling.setInterpolator(new LinearInterpolator());
-
         // 外层大圈动画，扩大与透明化
         long duration = 700;
         Animation outer = new ScaleAnimation(1, 3, 1, 3,
@@ -92,10 +77,11 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
         alpha.setDuration(duration);
         alpha.setRepeatCount(Animation.INFINITE);
 
-        mOuterCircleAni = new AnimationSet(true);
-        mOuterCircleAni.addAnimation(outer);
-        mOuterCircleAni.addAnimation(alpha);
-        mOuterCircleAni.setInterpolator(new DecelerateInterpolator());
+        AnimationSet outerAni = new AnimationSet(true);
+        outerAni.addAnimation(outer);
+        outerAni.addAnimation(alpha);
+        outerAni.setInterpolator(new DecelerateInterpolator());
+        mOuterCircleAni = outerAni;
 
         // 内圈动画，震动扩大
         mInnerCircleAni = new ScaleAnimation(0.95f, 2.0f, 0.95f, 2.0f,
@@ -106,6 +92,12 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
         mInnerAniInterpolator = new InnerAniInterpolator();
         mInnerCircleAni.setInterpolator(mInnerAniInterpolator);
 
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        mMicImg.setOnClickListener(this);
     }
 
     @Override
@@ -122,14 +114,14 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
 
     @Override
     public void setOnClickListener(OnClickListener l) {
-        mOnClickListener = l;
+        centerClickListener = l;
     }
 
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.mic_img) {
-            if (mOnClickListener != null) {
-                mOnClickListener.onClick(mRootView);
+            if (centerClickListener != null) {
+                centerClickListener.onClick(this);
             }
         }
     }
@@ -160,7 +152,10 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
     }
 
     public void setValue(float v) {
-        mInnerAniInterpolator.setVolume(v);
+        if (Float.compare(v, 0) < 0 || Float.compare(v, maxValue) > 0) {
+            throw new IllegalArgumentException("Value range [0," + maxValue + "],now is " + v);
+        }
+        mInnerAniInterpolator.setVolume(v / maxValue);
     }
 
     /**
@@ -169,7 +164,7 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
      * @author yuqiang.xia
      * @since 2014-7-20
      */
-    private class InnerAniInterpolator implements Interpolator {
+    private static class InnerAniInterpolator implements Interpolator {
 
         /**
          * 缩减周期比值
@@ -196,7 +191,7 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
         /**
          * 时间周期状态，一个周期是1.0+TIME_SHRINK，振幅从-0.1到高峰再回到-0.1
          */
-        private float mTimeCicle;
+        private float mTimeCircle;
         /**
          * 当前周期需要达到的波峰
          */
@@ -213,17 +208,17 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
         public void reset() {
             mLastInput = 0.0f;
             mLastOutput = -1.0f;
-            mTimeCicle = 0.0f;
+            mTimeCircle = 0.0f;
             mHighAmplitude = Amplitude_LOW;
             mLowAmplitude = Amplitude_LOW;
         }
 
         public void setVolume(float volume) {
-            if (volume == 0) {
+            if (Float.compare(volume, 0) == 0) {
                 return;
             }
 
-            float amplitude = (float) Math.min(volume / 30f, 0.7);
+            float amplitude = (float) Math.min(volume, 0.7);
             if (amplitude < mLastOutput) {
                 return;
             }
@@ -236,7 +231,7 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
             mHighAmplitude = amplitude;
 
             // 依据当前振幅位置，计算当前周期进行范围
-            mTimeCicle = (mLastOutput - Amplitude_LOW)
+            mTimeCircle = (mLastOutput - Amplitude_LOW)
                     / (mHighAmplitude - Amplitude_LOW);
 
         }
@@ -251,9 +246,9 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
                 delta = input + 1.0f - mLastInput;
             }
 
-            mTimeCicle += delta;
-            if (mTimeCicle > (1.0f + TIME_SHRINK)) {
-                mTimeCicle = mTimeCicle - 1.0f - TIME_SHRINK;
+            mTimeCircle += delta;
+            if (mTimeCircle > (1.0f + TIME_SHRINK)) {
+                mTimeCircle = mTimeCircle - 1.0f - TIME_SHRINK;
                 mHighAmplitude = Amplitude_LOW;
 
                 if (mLowAmplitude == Amplitude_END) {
@@ -261,12 +256,12 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
                 }
             }
 
-            if (mTimeCicle <= 1.0f) {
-                mLastOutput = (mHighAmplitude - mLowAmplitude) * mTimeCicle
+            if (mTimeCircle <= 1.0f) {
+                mLastOutput = (mHighAmplitude - mLowAmplitude) * mTimeCircle
                         + mLowAmplitude;
             } else {
                 mLastOutput = (mLowAmplitude - mHighAmplitude) / TIME_SHRINK
-                        * (mTimeCicle - 1.0f) + mHighAmplitude;
+                        * (mTimeCircle - 1.0f) + mHighAmplitude;
             }
 
             mLastInput = input;

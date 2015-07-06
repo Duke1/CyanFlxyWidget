@@ -1,8 +1,6 @@
 package com.cyanflxy.test;
 
 import android.app.Activity;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +9,8 @@ import android.view.Window;
 import android.widget.TextView;
 
 import com.cyanflxy.widget.CircleAnimateView;
+
+import java.io.IOException;
 
 public class CircleAnimationActivity extends Activity implements View.OnClickListener {
 
@@ -51,50 +51,66 @@ public class CircleAnimationActivity extends Activity implements View.OnClickLis
     }
 
     private class RecordThread extends Thread {
-        private AudioRecord audioRecord;
-        private int bufferSize;
-        private final int SAMPLE_RATE_IN_HZ = 8000;
         private volatile boolean isRun = false;
 
         private CircleAnimateView circleAnimateView;
+        MediaRecorder mediaRecorder;
 
-        @SuppressWarnings("deprecation")
+
         public RecordThread(CircleAnimateView circleAnimateView) {
             super();
             this.circleAnimateView = circleAnimateView;
 
-            bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE_IN_HZ,
-                    AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT);
-            audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE_IN_HZ,
-                    AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, bufferSize);
+            mediaRecorder = new MediaRecorder();
+
+            mediaRecorder.setMaxDuration(70000);
+            mediaRecorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
+
+                @Override
+                public void onError(MediaRecorder mr, int what, int extra) {
+                    Log.i("xyq", " error=" + what + " ex=" + extra);
+                }
+            });
+
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            mediaRecorder.setOutputFile(getFilesDir().getPath() + "/hello_world.amr");
         }
 
         public void run() {
             super.run();
-            audioRecord.startRecording();
-
-            short[] buffer = new short[bufferSize];
             isRun = true;
 
-            while (isRun) {
-                int len = audioRecord.read(buffer, 0, bufferSize);
-
-                int v = 0;
-                for (int i = 0; i < len; i++) {
-                    v += buffer[i] * buffer[i];
-                }
-
-                float dB = (float) (10 * Math.log10((double) v / len));
-                Log.i("SineWave", "db=" + dB);
-                if (Float.compare(dB, 100) > 0) {
-                    dB = 100;
-                }
-                circleAnimateView.setValue(dB);
+            try {
+                mediaRecorder.prepare();
+            } catch (IOException e) {
+                Log.i("xyq", "prepare error:", e);
+                return;
             }
-            audioRecord.stop();
-            audioRecord.release();
+
+            mediaRecorder.start();
+
+            while (isRun) {
+                int amplitude = mediaRecorder.getMaxAmplitude();
+                Log.i("xyq", "Max Amplitude:" + amplitude);
+
+                float value = amplitude / 200f;
+                if (Float.compare(value, 100f) > 0) {
+                    value = 100f;
+                }
+                circleAnimateView.setValue(value);
+
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            mediaRecorder.stop();
+            mediaRecorder.release();
         }
 
         public void setStop() {

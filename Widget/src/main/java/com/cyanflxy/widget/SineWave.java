@@ -78,13 +78,13 @@ public class SineWave extends View {
         }
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.SineWave, 0, 0);
-        waveColor = a.getColor(R.styleable.SineWave_wave_color, 0xFF4890D6);
-        maxValue = a.getFloat(R.styleable.SineWave_max_value, 100);
-        period = a.getFloat(R.styleable.SineWave_wave_period, 1.5f);
-        minAmplitude = a.getFloat(R.styleable.SineWave_min_amplitude, 0.23f);
-        horizontalSpeed = a.getDimension(R.styleable.SineWave_horizontal_speed, dip2px(270));
-        verticalSpeed = a.getDimension(R.styleable.SineWave_vertical_speed, dip2px(1));
-        verticalRestoreSpeed = a.getDimension(R.styleable.SineWave_vertical_restore_speed, dip2px(0.5f));
+        waveColor = a.getColor(R.styleable.SineWave_SineWave_wave_color, 0xFF4890D6);
+        maxValue = a.getFloat(R.styleable.SineWave_SineWave_max_value, 100);
+        period = a.getFloat(R.styleable.SineWave_SineWave_wave_period, 1.5f);
+        minAmplitude = a.getFloat(R.styleable.SineWave_SineWave_min_amplitude, 0.23f);
+        horizontalSpeed = a.getDimension(R.styleable.SineWave_SineWave_horizontal_speed, dip2px(270));
+        verticalSpeed = a.getDimension(R.styleable.SineWave_SineWave_vertical_speed, dip2px(1));
+        verticalRestoreSpeed = a.getDimension(R.styleable.SineWave_SineWave_vertical_restore_speed, dip2px(0.5f));
         a.recycle();
 
         paint = new Paint();

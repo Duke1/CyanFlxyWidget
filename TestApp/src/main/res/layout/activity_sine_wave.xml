@@ -15,11 +15,11 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="150dp"
         android:background="#D8D8D8"
-        app:horizontal_speed="200dp"
-        app:max_value="100"
-        app:min_amplitude="0.26"
-        app:vertical_restore_speed="0.5dp"
-        app:vertical_speed="1dp"
-        app:wave_color="#00F0D0"
-        app:wave_period="1.5"/>
+        app:SineWave_horizontal_speed="200dp"
+        app:SineWave_max_value="100"
+        app:SineWave_min_amplitude="0.26"
+        app:SineWave_vertical_restore_speed="0.5dp"
+        app:SineWave_vertical_speed="1dp"
+        app:SineWave_wave_color="#00F0D0"
+        app:SineWave_wave_period="1.5"/>
 </LinearLayout>
