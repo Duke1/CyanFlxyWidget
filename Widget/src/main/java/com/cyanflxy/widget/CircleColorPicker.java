@@ -32,6 +32,7 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.cyanflxy.annotation.Api;
 import com.google.gson.Gson;
 
 /**
@@ -41,6 +42,7 @@ import com.google.gson.Gson;
  */
 public class CircleColorPicker extends View {
 
+    @Api
     public interface OnColorSelectedListener {
         void onColorSelected(int color);
     }
@@ -49,56 +51,57 @@ public class CircleColorPicker extends View {
 
     private static final int[] PICKER_COLORS = {0xFF88FF00, 0xFF00FF00, 0xFF00FFFF, 0xFF0000FF, 0xFFFF00FF, 0xFFFF0000, 0xFFFFFF00, 0xFF88FF00,};
     private static final float[] PICKER_SHADER_POSITIONS = {0, 1 / 12f, 3 / 12f, 5 / 12f, 7 / 12f, 9 / 12f, 11 / 12f, 1.0f};
-    private int[] mBrightShaderColors = {0, Color.BLACK, Color.WHITE, 0};// 随着变化的数据
     private static final float[] BRIGHT_SHADER_POSITIONS = {0f, 0.25f, 0.75f, 1};
 
+    private int[] BrightShaderColors = {0, Color.BLACK, Color.WHITE, 0};// 随着变化的数据
+
     // 取色器基本颜色渲染
-    private final Shader mPickerColorShader = new SweepGradient(0, 0, PICKER_COLORS, PICKER_SHADER_POSITIONS);
+    private final Shader pickerColorShader = new SweepGradient(0, 0, PICKER_COLORS, PICKER_SHADER_POSITIONS);
 
     // 取色器区域比率
     private static final float PICKER_PERCENT = 0.9f;
-
     // 立体化边界
     private final float BORDER_WEIGHT;
     // 选择器的半径
     private final float CURSOR_RADIUS;
 
 
-    private int mWidth;
-    private int mHeight;
-    private float mDRadius;//一个半径差
+    private int width;
+    private int height;
+    private float dRadius;//一个半径差
 
-    private final PointF mCenter = new PointF();//绘图中心坐标
-    private float mPickerRadius;//取色器半径
-    private float mPickerBorderRadius;//取色器边框半径
-    private final Path mBrightPath = new Path();// 亮度区域
-    private float mBrightInnerRadius;// 亮度内径
-    private float mBrightOuterXRadius;//亮度区X外径
-    private float mBrightOuterYRadius;//亮度区Y外径
+    private final PointF center = new PointF();//绘图中心坐标
+    private float pickerRadius;//取色器半径
+    private float pickerBorderRadius;//取色器边框半径
+    private final Path brightPath = new Path();// 亮度区域
+    private float brightInnerRadius;// 亮度内径
+    private float brightOuterXRadius;//亮度区X外径
+    private float brightOuterYRadius;//亮度区Y外径
 
-    private Shader mPickerGrayShader;// 取色器灰度渲染
-    private Shader mBrightShader;   //亮度渲染
+    private Shader pickerGrayShader;// 取色器灰度渲染
+    private Shader brightShader;   //亮度渲染
 
-    private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    private OnColorSelectedListener mListener;
+    private OnColorSelectedListener listener;
 
     public CircleColorPicker(Context context, AttributeSet attrs) {
         super(context, attrs);
-        // setLayerType(LAYER_TYPE_SOFTWARE, mPaint);// 软件渲染
+        // setLayerType(LAYER_TYPE_SOFTWARE, paint);// 软件渲染
 
         // 初始化一些长度
         DisplayMetrics dm = getResources().getDisplayMetrics();
         BORDER_WEIGHT = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, dm);
         CURSOR_RADIUS = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, dm);
 
-        mPickerColor = Color.GRAY;
-        mBrightColor = Color.GRAY;
+        pickerColor = Color.GRAY;
+        brightColor = Color.GRAY;
         initBrightLayer();
     }
 
+    @Api
     public void setOnColorSelectedListener(OnColorSelectedListener l) {
-        mListener = l;
+        listener = l;
     }
 
     @Override
@@ -111,12 +114,12 @@ public class CircleColorPicker extends View {
             return;
         }
 
-        if (mWidth == width && mHeight == height) {
+        if (this.width == width && this.height == height) {
             return;
         }
 
-        mWidth = width;
-        mHeight = height;
+        this.width = width;
+        this.height = height;
 
         initPickerDimens();
         initBrightDimens();
@@ -148,158 +151,159 @@ public class CircleColorPicker extends View {
         int top = getPaddingTop();
         int bottom = getPaddingBottom();
 
-        int size = Math.min(mWidth - left - right, mHeight - top - bottom);
-        mDRadius = size * (1 - PICKER_PERCENT) / 2f;
+        int size = Math.min(width - left - right, height - top - bottom);
+        dRadius = size * (1 - PICKER_PERCENT) / 2f;
 
         // 取色器范围
         float tempR = size * PICKER_PERCENT / 2f;
-        mCenter.x = (mWidth - left - right - size) / 2f + left + tempR;
-        mCenter.y = (mHeight - top - bottom - size) / 2f + top + tempR + mDRadius;
-        mPickerRadius = tempR - BORDER_WEIGHT;
-        mPickerBorderRadius = mPickerRadius + BORDER_WEIGHT / 2;
+        center.x = (width - left - right - size) / 2f + left + tempR;
+        center.y = (height - top - bottom - size) / 2f + top + tempR + dRadius;
+        pickerRadius = tempR - BORDER_WEIGHT;
+        pickerBorderRadius = pickerRadius + BORDER_WEIGHT / 2;
     }
 
     // 亮度选择器范围参数
     private void initBrightDimens() {
-        mBrightInnerRadius = mPickerRadius + mDRadius;
-        mBrightOuterXRadius = mPickerRadius + mDRadius * 2;
-        mBrightOuterYRadius = mBrightInnerRadius + CURSOR_RADIUS / 3;
+        brightInnerRadius = pickerRadius + dRadius;
+        brightOuterXRadius = pickerRadius + dRadius * 2;
+        brightOuterYRadius = brightInnerRadius + CURSOR_RADIUS / 3;
 
-        mBrightPath.reset();
-        mBrightPath.moveTo(0, -mBrightInnerRadius);
+        brightPath.reset();
+        brightPath.moveTo(0, -brightInnerRadius);
 
         RectF tempRectF = new RectF();
-        tempRectF.left = -mBrightInnerRadius;
-        tempRectF.right = mBrightInnerRadius;
-        tempRectF.top = -mBrightInnerRadius;
-        tempRectF.bottom = mBrightInnerRadius;
-        mBrightPath.addArc(tempRectF, 90, -180);
+        tempRectF.left = -brightInnerRadius;
+        tempRectF.right = brightInnerRadius;
+        tempRectF.top = -brightInnerRadius;
+        tempRectF.bottom = brightInnerRadius;
+        brightPath.addArc(tempRectF, 90, -180);
 
-        tempRectF.left = -mBrightOuterXRadius;
-        tempRectF.right = mBrightOuterXRadius;
-        tempRectF.top = -mBrightOuterYRadius;
-        tempRectF.bottom = mBrightOuterYRadius;
-        mBrightPath.addArc(tempRectF, -90, 180);
+        tempRectF.left = -brightOuterXRadius;
+        tempRectF.right = brightOuterXRadius;
+        tempRectF.top = -brightOuterYRadius;
+        tempRectF.bottom = brightOuterYRadius;
+        brightPath.addArc(tempRectF, -90, 180);
 
-        mBrightPath.close();
+        brightPath.close();
 
-        updateBrightCursorPosition(mBrightCursor.x, mBrightCursor.y);
+        updateBrightCursorPosition(brightCursor.x, brightCursor.y);
     }
 
     private void initPickerLayer() {
-        mPickerGrayShader = new RadialGradient(0, 0, mPickerRadius,
+        pickerGrayShader = new RadialGradient(0, 0, pickerRadius,
                 Color.GRAY, Color.TRANSPARENT, Shader.TileMode.CLAMP);
 
         // 软件重叠模式
-        // mPickerColorShader = new ComposeShader(colorShader, grayShader, PorterDuff.Mode.MULTIPLY);
+        // pickerColorShader = new ComposeShader(colorShader, grayShader, PorterDuff.Mode.MULTIPLY);
     }
 
     private void initBrightLayer() {
-        mBrightShaderColors[0] = mBrightShaderColors[3] = mPickerColor;
-        mBrightShader = new SweepGradient(0, 0, mBrightShaderColors, BRIGHT_SHADER_POSITIONS);
+        BrightShaderColors[0] = BrightShaderColors[3] = pickerColor;
+        brightShader = new SweepGradient(0, 0, BrightShaderColors, BRIGHT_SHADER_POSITIONS);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (mWidth == 0 || mHeight == 0) {
+        if (width == 0 || height == 0) {
             return;
         }
 
-        canvas.translate(mCenter.x, mCenter.y);
+        canvas.translate(center.x, center.y);
 
-        mPaint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.Style.FILL);
 
         //取色器圆盘
-        mPaint.setShader(mPickerColorShader);
-        canvas.drawCircle(0, 0, mPickerRadius, mPaint);
-        mPaint.setShader(mPickerGrayShader);
-        canvas.drawCircle(0, 0, mPickerRadius, mPaint);
+        paint.setShader(pickerColorShader);
+        canvas.drawCircle(0, 0, pickerRadius, paint);
+        paint.setShader(pickerGrayShader);
+        canvas.drawCircle(0, 0, pickerRadius, paint);
 
         // 亮度月牙
-        mPaint.setShader(mBrightShader);
-        canvas.drawPath(mBrightPath, mPaint);
+        paint.setShader(brightShader);
+        canvas.drawPath(brightPath, paint);
 
         // 边框立体效果
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setShader(null);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setShader(null);
 
         //边框外环外环
-        mPaint.setStrokeWidth(BORDER_WEIGHT);
-        mPaint.setColor(0xff8b8f92);
-        canvas.drawCircle(0, 0, mPickerBorderRadius, mPaint);//取色器
-        canvas.drawCircle(mPickerCursor.x, mPickerCursor.y,
-                CURSOR_RADIUS + BORDER_WEIGHT / 2, mPaint);//取色器游标
-        canvas.drawCircle(mBrightCursor.x, mBrightCursor.y,
-                CURSOR_RADIUS + BORDER_WEIGHT / 2, mPaint);//亮度游标
+        paint.setStrokeWidth(BORDER_WEIGHT);
+        paint.setColor(0xff8b8f92);
+        canvas.drawCircle(0, 0, pickerBorderRadius, paint);//取色器
+        canvas.drawCircle(pickerCursor.x, pickerCursor.y,
+                CURSOR_RADIUS + BORDER_WEIGHT / 2, paint);//取色器游标
+        canvas.drawCircle(brightCursor.x, brightCursor.y,
+                CURSOR_RADIUS + BORDER_WEIGHT / 2, paint);//亮度游标
 
         //边框内环
-        mPaint.setStrokeWidth(BORDER_WEIGHT / 2);
-        mPaint.setColor(0xffccd0d3);
-        canvas.drawCircle(0, 0, mPickerBorderRadius, mPaint);// 取色器
-        canvas.drawCircle(mPickerCursor.x, mPickerCursor.y,
-                CURSOR_RADIUS + BORDER_WEIGHT / 2, mPaint);//取色器游标
-        canvas.drawCircle(mBrightCursor.x, mBrightCursor.y,
-                CURSOR_RADIUS + BORDER_WEIGHT / 2, mPaint);//亮度游标
+        paint.setStrokeWidth(BORDER_WEIGHT / 2);
+        paint.setColor(0xffccd0d3);
+        canvas.drawCircle(0, 0, pickerBorderRadius, paint);// 取色器
+        canvas.drawCircle(pickerCursor.x, pickerCursor.y,
+                CURSOR_RADIUS + BORDER_WEIGHT / 2, paint);//取色器游标
+        canvas.drawCircle(brightCursor.x, brightCursor.y,
+                CURSOR_RADIUS + BORDER_WEIGHT / 2, paint);//亮度游标
 
         // 游标内色
-        mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setColor(mPickerColor);
-        canvas.drawCircle(mPickerCursor.x, mPickerCursor.y, CURSOR_RADIUS, mPaint);//取色器游标
-        mPaint.setColor(mBrightColor);
-        canvas.drawCircle(mBrightCursor.x, mBrightCursor.y, CURSOR_RADIUS, mPaint);//亮度游标
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(pickerColor);
+        canvas.drawCircle(pickerCursor.x, pickerCursor.y, CURSOR_RADIUS, paint);//取色器游标
+        paint.setColor(brightColor);
+        canvas.drawCircle(brightCursor.x, brightCursor.y, CURSOR_RADIUS, paint);//亮度游标
 
         canvas.restore();
     }
 
     // 颜色选择部分
 
-    private final PointF mPickerCursor = new PointF(0, 0);
-    private final PointF mBrightCursor = new PointF(1.0f, 0);
-    private int mPickerColor;//取色器游标中的颜色
-    private int mBrightColor;//亮度游标颜色（当前取色器的真实颜色）
+    private final PointF pickerCursor = new PointF(0, 0);
+    private final PointF brightCursor = new PointF(1.0f, 0);
+    private int pickerColor;//取色器游标中的颜色
+    private int brightColor;//亮度游标颜色（当前取色器的真实颜色）
 
-    private boolean mIsDownInPicker;
-    private boolean mIsDownInBright;
+    private boolean isDownInPicker;
+    private boolean isDownInBright;
 
-    public int getColor(){
-        return mBrightColor;
+    @Api
+    public int getColor() {
+        return brightColor;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        float x = event.getX() - mCenter.x;
-        float y = event.getY() - mCenter.y;
+        float x = event.getX() - center.x;
+        float y = event.getY() - center.y;
 
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
-                mIsDownInPicker = isInPicker(x, y);
-                mIsDownInBright = isInBright(x, y);
+                isDownInPicker = isInPicker(x, y);
+                isDownInBright = isInBright(x, y);
                 break;
             case MotionEvent.ACTION_MOVE:
             case MotionEvent.ACTION_UP:
-                if (mIsDownInPicker) {
+                if (isDownInPicker) {
                     updatePickerCursorPosition(x, y);
                     pickupPickerColor();
-                } else if (mIsDownInBright) {
+                } else if (isDownInBright) {
                     updateBrightCursorPosition(x, y);
                     pickupBrightColor();
                 }
 
                 invalidate();
 
-                if (mListener != null) {
-                    mListener.onColorSelected(mBrightColor);
+                if (listener != null) {
+                    listener.onColorSelected(brightColor);
                 }
 
                 break;
         }
 
-        return mIsDownInPicker || mIsDownInBright || super.onTouchEvent(event);
+        return isDownInPicker || isDownInBright || super.onTouchEvent(event);
     }
 
     private boolean isInPicker(float x, float y) {
-        return (x * x + y * y) < (mPickerRadius * mPickerRadius);
+        return (x * x + y * y) < (pickerRadius * pickerRadius);
     }
 
     private boolean isInBright(float x, float y) {
@@ -308,8 +312,8 @@ public class CircleColorPicker extends View {
         }
 
         float range = CURSOR_RADIUS;
-        float rx = (mBrightInnerRadius + mBrightOuterXRadius) / 2;
-        float ry = mBrightInnerRadius;
+        float rx = (brightInnerRadius + brightOuterXRadius) / 2;
+        float ry = brightInnerRadius;
 
         float innerRx2 = (rx - range) * (rx - range);
         float innerRy2 = (ry - range) * (ry - range);
@@ -332,32 +336,32 @@ public class CircleColorPicker extends View {
 
     private void updatePickerCursorPosition(float x, float y) {
         if (isInPicker(x, y)) {
-            mPickerCursor.x = x;
-            mPickerCursor.y = y;
+            pickerCursor.x = x;
+            pickerCursor.y = y;
         } else {
             // 修正游标在边界的坐标
             float r = (float) Math.sqrt(x * x + y * y);
-            float rate = mPickerRadius / r;
-            mPickerCursor.x = x * rate;
-            mPickerCursor.y = y * rate;
+            float rate = pickerRadius / r;
+            pickerCursor.x = x * rate;
+            pickerCursor.y = y * rate;
 
         }
     }
 
     private void updateBrightCursorPosition(float x, float y) {
-        float rx = (mBrightInnerRadius + mBrightOuterXRadius) / 2;
-        float ry = (mBrightInnerRadius + mBrightOuterYRadius) / 2;
+        float rx = (brightInnerRadius + brightOuterXRadius) / 2;
+        float ry = (brightInnerRadius + brightOuterYRadius) / 2;
 
         if (x <= 0) {
-            if (y > mPickerRadius - CURSOR_RADIUS * 3) {
-                mIsDownInBright = false;
-                mBrightCursor.x = 0;
-                mBrightCursor.y = ry;
+            if (y > pickerRadius - CURSOR_RADIUS * 3) {
+                isDownInBright = false;
+                brightCursor.x = 0;
+                brightCursor.y = ry;
                 return;
-            } else if (y < -mPickerRadius + CURSOR_RADIUS * 3) {
-                mIsDownInBright = false;
-                mBrightCursor.x = 0;
-                mBrightCursor.y = -ry;
+            } else if (y < -pickerRadius + CURSOR_RADIUS * 3) {
+                isDownInBright = false;
+                brightCursor.x = 0;
+                brightCursor.y = -ry;
                 return;
             }
             x = -x;
@@ -369,19 +373,19 @@ public class CircleColorPicker extends View {
         float x0 = (float) Math.sqrt(1 / (1 / rx2 + 1 / (ry2 * rate * rate)));
         float y0 = x0 / rate;
 
-        mBrightCursor.x = x0;
-        mBrightCursor.y = y0;
+        brightCursor.x = x0;
+        brightCursor.y = y0;
 
         if (x0 == 0) {
-            mIsDownInBright = false;
+            isDownInBright = false;
         }
     }
 
     // 当前的颜色值
     private void pickupPickerColor() {
         // 计算色相
-        float x = mPickerCursor.x;
-        float y = mPickerCursor.y;
+        float x = pickerCursor.x;
+        float y = pickerCursor.y;
 
         float r = (float) Math.sqrt(x * x + y * y);
         double d = Math.asin(y / r);
@@ -413,24 +417,24 @@ public class CircleColorPicker extends View {
         //色相颜色值
         int hueColor = aveColor(startColor, stopColor, percent);
         // 计算饱和度
-        mPickerColor = aveColor(Color.GRAY, hueColor, r / mPickerRadius);
+        pickerColor = aveColor(Color.GRAY, hueColor, r / pickerRadius);
 
         pickupBrightColor();
         initBrightLayer();
     }
 
     private void pickupBrightColor() {
-        float x = mBrightCursor.x;
-        float y = mBrightCursor.y;
+        float x = brightCursor.x;
+        float y = brightCursor.y;
 
         double r = Math.sqrt(x * x + y * y);
         double d = Math.asin(y / r);
         float percent = (float) (d / (Math.PI / 2));
 
         if (y > 0) {
-            mBrightColor = aveColor(mPickerColor, Color.BLACK, percent);
+            brightColor = aveColor(pickerColor, Color.BLACK, percent);
         } else {
-            mBrightColor = aveColor(mPickerColor, Color.WHITE, -percent);
+            brightColor = aveColor(pickerColor, Color.WHITE, -percent);
         }
     }
 
@@ -449,11 +453,12 @@ public class CircleColorPicker extends View {
 
     // 状态存取
 
+    @Api
     public String getState() {
         State state = new State();
 
-        float x = mPickerCursor.x;
-        float y = mPickerCursor.y;
+        float x = pickerCursor.x;
+        float y = pickerCursor.y;
 
         double r = Math.sqrt(x * x + y * y);
         if (r != 0) {
@@ -467,10 +472,10 @@ public class CircleColorPicker extends View {
             state.hue = 0d;
         }
 
-        state.saturation = r / mPickerRadius;
+        state.saturation = r / pickerRadius;
 
-        x = mBrightCursor.x;
-        y = mBrightCursor.y;
+        x = brightCursor.x;
+        y = brightCursor.y;
         state.bright = Math.asin(y / Math.sqrt(x * x + y * y));
 
         Gson json = new Gson();
@@ -478,6 +483,7 @@ public class CircleColorPicker extends View {
         return json.toJson(state);
     }
 
+    @Api
     public void setState(String stateStr) {
         Gson json = new Gson();
         State state = json.fromJson(stateStr, State.class);
@@ -490,24 +496,24 @@ public class CircleColorPicker extends View {
     }
 
     private void setPickerCursorPosition(double hue, double saturation) {
-        double r = saturation * mPickerRadius;
+        double r = saturation * pickerRadius;
         double x = r * Math.cos(hue);
         double y = r * Math.sin(hue);
-        mPickerCursor.x = (float) x;
-        mPickerCursor.y = (float) y;
+        pickerCursor.x = (float) x;
+        pickerCursor.y = (float) y;
     }
 
     private void setBrightCursorPosition(double angle) {
-        float rx = (mBrightInnerRadius + mBrightOuterXRadius) / 2;
-        float ry = (mBrightInnerRadius + mBrightOuterYRadius) / 2;
+        float rx = (brightInnerRadius + brightOuterXRadius) / 2;
+        float ry = (brightInnerRadius + brightOuterYRadius) / 2;
 
         if (Math.abs(angle - Math.PI / 2) < 0.001) {
-            mBrightCursor.x = 0;
-            mBrightCursor.y = ry;
+            brightCursor.x = 0;
+            brightCursor.y = ry;
             return;
         } else if (Math.abs(angle + Math.PI / 2) < 0.001) {
-            mBrightCursor.x = 0;
-            mBrightCursor.y = -ry;
+            brightCursor.x = 0;
+            brightCursor.y = -ry;
             return;
         }
 
@@ -517,8 +523,8 @@ public class CircleColorPicker extends View {
         float x0 = (float) Math.sqrt(1 / (1 / rx2 + 1 / (ry2 * rate * rate)));
         float y0 = x0 / rate;
 
-        mBrightCursor.x = x0;
-        mBrightCursor.y = y0;
+        brightCursor.x = x0;
+        brightCursor.y = y0;
 
     }
 
