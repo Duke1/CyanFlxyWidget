@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="CircleAnimateView">
-        <attr name="CircleAnimateView_max_value" format="float" />
+        <attr name="CircleAnimateView_max_value" format="float"/>
+        <attr name="CircleAnimateView_outer_circle_image" format="reference"/>
+        <attr name="CircleAnimateView_inner_circle_image" format="reference"/>
+        <attr name="CircleAnimateView_center_image" format="reference"/>
+        <attr name="CircleAnimateView_center_size" format="dimension"/>
+        <attr name="CircleAnimateView_center_x_relative">
+            <enum name="left" value="0"/>
+            <enum name="center" value="1"/>
+            <enum name="right" value="2"/>
+        </attr>
+        <attr name="CircleAnimateView_center_y_relative">
+            <enum name="top" value="0"/>
+            <enum name="center" value="1"/>
+            <enum name="bottom" value="2"/>
+        </attr>
+        <attr name="CircleAnimateView_center_x_shift" format="dimension"/>
+        <attr name="CircleAnimateView_center_y_shift" format="dimension"/>
     </declare-styleable>
 </resources>

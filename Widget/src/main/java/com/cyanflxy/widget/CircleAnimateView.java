@@ -37,13 +37,13 @@ import android.widget.RelativeLayout;
  */
 public class CircleAnimateView extends RelativeLayout implements OnClickListener {
 
-    private ImageView mMicImg;
-    private ImageView mOuterCircle;
-    private ImageView mInnerCircle;
+    private ImageView centerImage;
+    private ImageView outerCircle;
+    private ImageView innerCircle;
 
-    private Animation mOuterCircleAni;
-    private Animation mInnerCircleAni;
-    private InnerAniInterpolator mInnerAniInterpolator;
+    private Animation outerCircleAni;
+    private Animation innerCircleAni;
+    private InnerAniInterpolator innerAniInterpolator;
 
     private OnClickListener centerClickListener;
 
@@ -51,53 +51,71 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
 
     public CircleAnimateView(Context c, AttributeSet attrs) {
         super(c, attrs);
-        inflate(c, R.layout.voice_mic_animate_view, this);
-
-        mMicImg = (ImageView) findViewById(R.id.mic_img);
-        mOuterCircle = (ImageView) findViewById(R.id.outer_circle);
-        mInnerCircle = (ImageView) findViewById(R.id.inner_circle);
+        inflate(c, R.layout.circle_animate_layout, this);
 
         TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.CircleAnimateView);
         maxValue = a.getFloat(R.styleable.CircleAnimateView_CircleAnimateView_max_value, 100);
+        int centerDrawable = a.getResourceId(R.styleable.CircleAnimateView_CircleAnimateView_center_image, 0);
+        int innerDrawable = a.getResourceId(R.styleable.CircleAnimateView_CircleAnimateView_inner_circle_image, 0);
+        int outerDrawable = a.getResourceId(R.styleable.CircleAnimateView_CircleAnimateView_outer_circle_image, 0);
+        float size = a.getDimension(R.styleable.CircleAnimateView_CircleAnimateView_center_size, 0);
         a.recycle();
+
+        centerImage = (ImageView) findViewById(R.id.mic_img);
+        outerCircle = (ImageView) findViewById(R.id.outer_circle);
+        innerCircle = (ImageView) findViewById(R.id.inner_circle);
+
+        if (centerDrawable != 0) {
+            centerImage.setImageResource(centerDrawable);
+        }
+        if (innerDrawable != 0) {
+            innerCircle.setImageResource(innerDrawable);
+        }
+        if (outerDrawable != 0) {
+            outerCircle.setImageResource(outerDrawable);
+        }
+
+        if (Float.compare(size, 0) > 0) {
+            centerImage.setMaxWidth((int) size);
+            centerImage.setMaxHeight((int) size);
+        }
 
         initAnimate();
     }
 
     private void initAnimate() {
         // 外层大圈动画，扩大与透明化
-        long duration = 700;
         Animation outer = new ScaleAnimation(1, 3, 1, 3,
                 Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
                 0.5f);
-        outer.setDuration(duration);
+        outer.setDuration(700);
         outer.setRepeatCount(Animation.INFINITE);
 
         Animation alpha = new AlphaAnimation(1.0f, 0.0f);
-        alpha.setDuration(duration);
+        alpha.setDuration(700);
         alpha.setRepeatCount(Animation.INFINITE);
 
         AnimationSet outerAni = new AnimationSet(true);
         outerAni.addAnimation(outer);
         outerAni.addAnimation(alpha);
         outerAni.setInterpolator(new DecelerateInterpolator());
-        mOuterCircleAni = outerAni;
+        outerCircleAni = outerAni;
 
         // 内圈动画，震动扩大
-        mInnerCircleAni = new ScaleAnimation(0.95f, 2.0f, 0.95f, 2.0f,
+        innerCircleAni = new ScaleAnimation(0.95f, 2.0f, 0.95f, 2.0f,
                 Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
                 0.5f);
-        mInnerCircleAni.setDuration(500);
-        mInnerCircleAni.setRepeatCount(Animation.INFINITE);
-        mInnerAniInterpolator = new InnerAniInterpolator();
-        mInnerCircleAni.setInterpolator(mInnerAniInterpolator);
+        innerCircleAni.setDuration(500);
+        innerCircleAni.setRepeatCount(Animation.INFINITE);
+        innerAniInterpolator = new InnerAniInterpolator();
+        innerCircleAni.setInterpolator(innerAniInterpolator);
 
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mMicImg.setOnClickListener(this);
+        centerImage.setOnClickListener(this);
     }
 
     @Override
@@ -109,7 +127,7 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
     @Override
     public void setClickable(boolean clickable) {
         super.setClickable(clickable);
-        mMicImg.setClickable(clickable);
+        centerImage.setClickable(clickable);
     }
 
     @Override
@@ -128,34 +146,31 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
 
     // 监听时动画
     public void startListenAni() {
-        mOuterCircleAni.reset();
-        mOuterCircle.setVisibility(View.VISIBLE);
-        mOuterCircle.startAnimation(mOuterCircleAni);
+        outerCircleAni.reset();
+        outerCircle.setVisibility(View.VISIBLE);
+        outerCircle.startAnimation(outerCircleAni);
 
-        mInnerAniInterpolator.reset();
-        mInnerCircleAni.reset();
-        mInnerCircle.setVisibility(View.VISIBLE);
-        mInnerCircle.startAnimation(mInnerCircleAni);
-
+        innerAniInterpolator.reset();
+        innerCircleAni.reset();
+        innerCircle.setVisibility(View.VISIBLE);
+        innerCircle.startAnimation(innerCircleAni);
     }
 
     public void stopListenAni() {
-        mOuterCircleAni.cancel();
-        mOuterCircle.clearAnimation();
-        mOuterCircle.setVisibility(View.GONE);
+        outerCircleAni.cancel();
+        outerCircle.clearAnimation();
+        outerCircle.setVisibility(View.GONE);
 
-        mInnerCircleAni.cancel();
-        mInnerCircle.clearAnimation();
-        mInnerCircle.setVisibility(View.GONE);
-
-        mMicImg.setImageResource(R.drawable.voice_mic);
+        innerCircleAni.cancel();
+        innerCircle.clearAnimation();
+        innerCircle.setVisibility(View.GONE);
     }
 
     public void setValue(float v) {
         if (Float.compare(v, 0) < 0 || Float.compare(v, maxValue) > 0) {
             throw new IllegalArgumentException("Value range [0," + maxValue + "],now is " + v);
         }
-        mInnerAniInterpolator.setVolume(v / maxValue);
+        innerAniInterpolator.setVolume(v / maxValue);
     }
 
     /**
