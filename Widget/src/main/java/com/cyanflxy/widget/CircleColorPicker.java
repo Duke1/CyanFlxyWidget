@@ -32,7 +32,7 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.cyanflxy.annotation.Api;
+import com.cyanflxy.annotation.API;
 import com.google.gson.Gson;
 
 /**
@@ -42,7 +42,7 @@ import com.google.gson.Gson;
  */
 public class CircleColorPicker extends View {
 
-    @Api
+    @API
     public interface OnColorSelectedListener {
         void onColorSelected(int color);
     }
@@ -99,27 +99,27 @@ public class CircleColorPicker extends View {
         initBrightLayer();
     }
 
-    @Api
+    @API
     public void setOnColorSelectedListener(OnColorSelectedListener l) {
         listener = l;
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int width = measure(widthMeasureSpec);
-        int height = measure(heightMeasureSpec);
-        setMeasuredDimension(width, height);
+        int w = measure(widthMeasureSpec);
+        int h = measure(heightMeasureSpec);
+        setMeasuredDimension(w, h);
 
-        if (width == 0 || height == 0) {
+        if (w == 0 || h == 0) {
             return;
         }
 
-        if (this.width == width && this.height == height) {
+        if (width == w && height == h) {
             return;
         }
 
-        this.width = width;
-        this.height = height;
+        width = w;
+        height = h;
 
         initPickerDimens();
         initBrightDimens();
@@ -265,7 +265,7 @@ public class CircleColorPicker extends View {
     private boolean isDownInPicker;
     private boolean isDownInBright;
 
-    @Api
+    @API
     public int getColor() {
         return brightColor;
     }
@@ -453,7 +453,7 @@ public class CircleColorPicker extends View {
 
     // 状态存取
 
-    @Api
+    @API
     public String getState() {
         State state = new State();
 
@@ -483,7 +483,7 @@ public class CircleColorPicker extends View {
         return json.toJson(state);
     }
 
-    @Api
+    @API
     public void setState(String stateStr) {
         Gson json = new Gson();
         State state = json.fromJson(stateStr, State.class);

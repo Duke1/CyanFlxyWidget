@@ -2,6 +2,7 @@
 <resources>
     <declare-styleable name="CircleAnimateView">
         <attr name="CircleAnimateView_max_value" format="float"/>
+        <attr name="CircleAnimateView_animate_duration" format="integer"/>
         <attr name="CircleAnimateView_outer_circle_image" format="reference"/>
         <attr name="CircleAnimateView_inner_circle_image" format="reference"/>
         <attr name="CircleAnimateView_center_image" format="reference"/>

@@ -16,107 +16,202 @@
 
 package com.cyanflxy.widget;
 
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.ScaleAnimation;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
+
+import com.cyanflxy.annotation.API;
+import com.cyanflxy.annotation.ReflectInvoke;
 
 /**
  * Google 语音那样的圆圈动画
  * <p/>
  * Created by CyanFlxy on 2014/9/15.
  */
-public class CircleAnimateView extends RelativeLayout implements OnClickListener {
+public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpdateListener {
 
-    private ImageView centerImage;
-    private ImageView outerCircle;
-    private ImageView innerCircle;
+    public static final int RELATIVE_START = 0;
+    public static final int RELATIVE_CENTER = 1;
+    public static final int RELATIVE_END = 2;
 
-    private Animation outerCircleAni;
-    private Animation innerCircleAni;
-    private InnerAniInterpolator innerAniInterpolator;
+    private float maxValue;// 动画最大幅度值
 
-    private OnClickListener centerClickListener;
+    private int width;// 绘图区宽度
+    private int height;//绘图区高度
 
-    private float maxValue;
+    private int relativeX;// 绘图中心相对X位置
+    private int relativeY;// 绘图中心相对Y位置
+
+    private float shiftX;// 绘图中心偏移X距离
+    private float shiftY;// 绘图中心偏移X距离
+
+    private float centerX;// 绘图中心X
+    private float centerY;// 绘图中心Y
+
+    private float centerSize;// 绘图中心区域大小
+
+    private int duration;// 动画频率
+
+    private Drawable centerDrawable;// 中心区域图片
+
+    private AnimatorHolder innerDrawableHolder;// 内圈图片
+    private Animator innerCircleAnimator;//内圈动画
+    private InnerAniInterpolator innerAniInterpolator;//内圈插值器
+
+    private AnimatorHolder outerDrawableHolder;// 外圈图片
+    private Animator outerCircleAnimator;//外圈动画
 
     public CircleAnimateView(Context c, AttributeSet attrs) {
         super(c, attrs);
-        inflate(c, R.layout.circle_animate_layout, this);
 
         TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.CircleAnimateView);
         maxValue = a.getFloat(R.styleable.CircleAnimateView_CircleAnimateView_max_value, 100);
-        int centerDrawable = a.getResourceId(R.styleable.CircleAnimateView_CircleAnimateView_center_image, 0);
-        int innerDrawable = a.getResourceId(R.styleable.CircleAnimateView_CircleAnimateView_inner_circle_image, 0);
-        int outerDrawable = a.getResourceId(R.styleable.CircleAnimateView_CircleAnimateView_outer_circle_image, 0);
-        float size = a.getDimension(R.styleable.CircleAnimateView_CircleAnimateView_center_size, 0);
+        centerSize = a.getDimension(R.styleable.CircleAnimateView_CircleAnimateView_center_size, 0);
+
+        centerDrawable = a.getDrawable(R.styleable.CircleAnimateView_CircleAnimateView_center_image);
+        Drawable innerDrawable = a.getDrawable(R.styleable.CircleAnimateView_CircleAnimateView_inner_circle_image);
+        Drawable outerDrawable = a.getDrawable(R.styleable.CircleAnimateView_CircleAnimateView_outer_circle_image);
+
+        relativeX = a.getInt(R.styleable.CircleAnimateView_CircleAnimateView_center_x_relative, RELATIVE_CENTER);
+        relativeY = a.getInt(R.styleable.CircleAnimateView_CircleAnimateView_center_x_relative, RELATIVE_CENTER);
+        shiftX = a.getDimension(R.styleable.CircleAnimateView_CircleAnimateView_center_x_shift, 0);
+        shiftY = a.getDimension(R.styleable.CircleAnimateView_CircleAnimateView_center_y_shift, 0);
+
+        duration = a.getInteger(R.styleable.CircleAnimateView_CircleAnimateView_animate_duration, 700);
+
         a.recycle();
 
-        centerImage = (ImageView) findViewById(R.id.mic_img);
-        outerCircle = (ImageView) findViewById(R.id.outer_circle);
-        innerCircle = (ImageView) findViewById(R.id.inner_circle);
+        calculateCenter();
 
-        if (centerDrawable != 0) {
-            centerImage.setImageResource(centerDrawable);
-        }
-        if (innerDrawable != 0) {
-            innerCircle.setImageResource(innerDrawable);
-        }
-        if (outerDrawable != 0) {
-            outerCircle.setImageResource(outerDrawable);
+        if (innerDrawable != null) {
+            innerDrawableHolder = new AnimatorHolder(innerDrawable);
+            innerCircleAnimator = createInnerAnimator(innerDrawableHolder);
         }
 
-        if (Float.compare(size, 0) > 0) {
-            centerImage.setMaxWidth((int) size);
-            centerImage.setMaxHeight((int) size);
+        if (outerDrawable != null) {
+            outerDrawableHolder = new AnimatorHolder(outerDrawable);
+            outerCircleAnimator = createOuterAnimator(this.outerDrawableHolder);
         }
 
-        initAnimate();
     }
 
-    private void initAnimate() {
-        // 外层大圈动画，扩大与透明化
-        Animation outer = new ScaleAnimation(1, 3, 1, 3,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f);
-        outer.setDuration(700);
-        outer.setRepeatCount(Animation.INFINITE);
+    private void calculateCenter() {
+        if (centerSize == 0 && centerDrawable != null) {
+            centerSize = Math.min(
+                    centerDrawable.getIntrinsicHeight(),
+                    centerDrawable.getIntrinsicWidth());
+        }
 
-        Animation alpha = new AlphaAnimation(1.0f, 0.0f);
-        alpha.setDuration(700);
-        alpha.setRepeatCount(Animation.INFINITE);
+        if (centerSize <= 0) {
+            centerSize = 100;
+        }
 
-        AnimationSet outerAni = new AnimationSet(true);
-        outerAni.addAnimation(outer);
-        outerAni.addAnimation(alpha);
-        outerAni.setInterpolator(new DecelerateInterpolator());
-        outerCircleAni = outerAni;
+        resizeCenterDrawable();
+    }
 
-        // 内圈动画，震动扩大
-        innerCircleAni = new ScaleAnimation(0.95f, 2.0f, 0.95f, 2.0f,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f);
-        innerCircleAni.setDuration(500);
-        innerCircleAni.setRepeatCount(Animation.INFINITE);
+    private void resizeCenterDrawable() {
+        if (centerDrawable != null) {
+            Rect center = new Rect();
+            int half = (int) (centerSize / 2);
+            center.left = -half;
+            center.top = -half;
+            center.right = half;
+            center.bottom = half;
+
+            centerDrawable.setBounds(center);
+        }
+    }
+
+    private Animator createInnerAnimator(AnimatorHolder holder) {
+        PropertyValuesHolder x = PropertyValuesHolder.ofFloat("width", centerSize, centerSize * 3);
+        PropertyValuesHolder y = PropertyValuesHolder.ofFloat("height", centerSize, centerSize * 3);
+
+        ValueAnimator animator = ObjectAnimator.ofPropertyValuesHolder(holder, x, y);
+        animator.setDuration(duration);
+        animator.addUpdateListener(this);
+        animator.setRepeatMode(ValueAnimator.RESTART);
+        animator.setRepeatCount(ValueAnimator.INFINITE);
         innerAniInterpolator = new InnerAniInterpolator();
-        innerCircleAni.setInterpolator(innerAniInterpolator);
+        animator.setInterpolator(innerAniInterpolator);
+
+        return animator;
+    }
+
+    private Animator createOuterAnimator(AnimatorHolder holder) {
+        PropertyValuesHolder x = PropertyValuesHolder.ofFloat("width", centerSize, centerSize * 3);
+        PropertyValuesHolder y = PropertyValuesHolder.ofFloat("height", centerSize, centerSize * 3);
+        PropertyValuesHolder a = PropertyValuesHolder.ofInt("alpha", 255, 50);
+
+        ValueAnimator animator = ObjectAnimator.ofPropertyValuesHolder(holder, x, y, a);
+        animator.setDuration(duration);
+        animator.addUpdateListener(this);
+        animator.setRepeatMode(ValueAnimator.RESTART);
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+        animator.setInterpolator(new DecelerateInterpolator());
+
+        return animator;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int w = getWidth();
+        int h = getHeight();
+
+        if (w == 0 || h == 0) {
+            return;
+        }
+
+        if (width == w && height == h) {
+            return;
+        }
+
+        width = w;
+        height = h;
+
+        setCenterX(relativeX, shiftX);
+        setCenterY(relativeY, shiftY);
 
     }
 
     @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        centerImage.setOnClickListener(this);
+    public void onAnimationUpdate(ValueAnimator animation) {
+        invalidate();
     }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        canvas.translate(centerX, centerY);
+
+        if (outerDrawableHolder != null) {
+            outerDrawableHolder.draw(canvas);
+        }
+
+        if (innerDrawableHolder != null) {
+            innerDrawableHolder.draw(canvas);
+        }
+
+        if (centerDrawable != null) {
+            centerDrawable.draw(canvas);
+        }
+
+        canvas.restore();
+
+    }
+
 
     @Override
     protected void onDetachedFromWindow() {
@@ -124,54 +219,157 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
         super.onDetachedFromWindow();
     }
 
-    @Override
-    public void setClickable(boolean clickable) {
-        super.setClickable(clickable);
-        centerImage.setClickable(clickable);
+    @API
+    public void setMaxValue(float max) {
+        maxValue = max;
     }
 
-    @Override
-    public void setOnClickListener(OnClickListener l) {
-        centerClickListener = l;
+    @API
+    public void setCenterX(float centerX) {
+        this.centerX = centerX;
+        this.relativeX = RELATIVE_START;
+        this.shiftX = centerX;
     }
 
-    @Override
-    public void onClick(View v) {
-        if (v.getId() == R.id.mic_img) {
-            if (centerClickListener != null) {
-                centerClickListener.onClick(this);
+    @API
+    public void setCenterY(float centerY) {
+        this.centerY = centerY;
+        this.relativeY = RELATIVE_START;
+        this.shiftY = centerY;
+    }
+
+    @API
+    public void setCenterX(int relativeX, float shiftX) {
+        this.relativeX = relativeX;
+        this.shiftX = shiftX;
+
+        switch (relativeX) {
+            case RELATIVE_CENTER:
+                centerX = width / 2f;
+                break;
+            case RELATIVE_START:
+                centerX = 0;
+                break;
+            case RELATIVE_END:
+                centerX = width;
+                break;
+        }
+
+        centerX += shiftX;
+    }
+
+    @API
+    public void setCenterY(int relativeY, float shiftY) {
+        this.relativeY = relativeY;
+        this.shiftY = shiftY;
+
+        switch (relativeY) {
+            case RELATIVE_CENTER:
+                centerY = height / 2f;
+                break;
+            case RELATIVE_START:
+                centerY = 0;
+                break;
+            case RELATIVE_END:
+                centerY = height;
+                break;
+        }
+
+        centerY += shiftY;
+    }
+
+    @API
+    public void setCenterSize(float size) {
+        centerSize = size;
+
+        resizeCenterDrawable();
+
+        if (innerDrawableHolder != null) {
+            if (innerCircleAnimator.isRunning()) {
+                innerCircleAnimator.cancel();
             }
+            innerCircleAnimator = createInnerAnimator(innerDrawableHolder);
+        }
+
+        if (outerDrawableHolder != null) {
+            if (outerCircleAnimator.isRunning()) {
+                outerCircleAnimator.cancel();
+            }
+
+            outerCircleAnimator = createOuterAnimator(outerDrawableHolder);
         }
     }
 
-    // 监听时动画
+    @API
+    public void setDuration(int duration) {
+        this.duration = duration;
+        if (innerCircleAnimator != null) {
+            innerCircleAnimator.setDuration(duration);
+        }
+        if (outerCircleAnimator != null) {
+            outerCircleAnimator.setDuration(duration);
+        }
+    }
+
+    @API
+    public void setCenterDrawable(Drawable drawable) {
+        centerDrawable = drawable;
+        resizeCenterDrawable();
+        invalidate();
+    }
+
+    @API
+    public void setInnerDrawable(Drawable drawable) {
+        if (innerDrawableHolder == null) {
+            innerDrawableHolder = new AnimatorHolder(drawable);
+            innerCircleAnimator = createInnerAnimator(innerDrawableHolder);
+        } else {
+            innerDrawableHolder.setDrawable(drawable);
+        }
+    }
+
+    @API
+    public void setOuterDrawable(Drawable drawable) {
+        if (outerDrawableHolder == null) {
+            outerDrawableHolder = new AnimatorHolder(drawable);
+            outerCircleAnimator = createOuterAnimator(this.outerDrawableHolder);
+        } else {
+            outerDrawableHolder.setDrawable(drawable);
+        }
+    }
+
+
+    @API
     public void startListenAni() {
-        outerCircleAni.reset();
-        outerCircle.setVisibility(View.VISIBLE);
-        outerCircle.startAnimation(outerCircleAni);
+        if (innerCircleAnimator != null) {
+            innerAniInterpolator.reset();
+            innerCircleAnimator.start();
+        }
 
-        innerAniInterpolator.reset();
-        innerCircleAni.reset();
-        innerCircle.setVisibility(View.VISIBLE);
-        innerCircle.startAnimation(innerCircleAni);
+        if (outerCircleAnimator != null) {
+            outerCircleAnimator.start();
+        }
     }
 
+    @API
     public void stopListenAni() {
-        outerCircleAni.cancel();
-        outerCircle.clearAnimation();
-        outerCircle.setVisibility(View.GONE);
+        if (innerCircleAnimator != null) {
+            innerCircleAnimator.cancel();
+        }
 
-        innerCircleAni.cancel();
-        innerCircle.clearAnimation();
-        innerCircle.setVisibility(View.GONE);
+        if (outerCircleAnimator != null) {
+            outerCircleAnimator.cancel();
+        }
     }
 
+    @API
     public void setValue(float v) {
         if (Float.compare(v, 0) < 0 || Float.compare(v, maxValue) > 0) {
             throw new IllegalArgumentException("Value range [0," + maxValue + "],now is " + v);
         }
         innerAniInterpolator.setVolume(v / maxValue);
     }
+
 
     /**
      * 内圈动画的插值器，该插值器根据音量产生变化
@@ -281,6 +479,47 @@ public class CircleAnimateView extends RelativeLayout implements OnClickListener
 
             mLastInput = input;
             return mLastOutput;
+        }
+
+    }
+
+    class AnimatorHolder {
+        private Drawable drawable;
+        private int alpha = 255;
+        private Rect dst;
+
+        public AnimatorHolder(Drawable d) {
+            drawable = d;
+            dst = new Rect();
+        }
+
+        public void setDrawable(Drawable d) {
+            drawable = d;
+        }
+
+        @ReflectInvoke(invokeBy = "API")
+        public void setAlpha(int a) {
+            alpha = a;
+        }
+
+        @ReflectInvoke(invokeBy = "API")
+        public void setWidth(float width) {
+            int half = (int) (width / 2);
+            dst.left = -half;
+            dst.right = half;
+        }
+
+        @ReflectInvoke(invokeBy = "API")
+        public void setHeight(float height) {
+            int half = (int) (height / 2);
+            dst.top = -half;
+            dst.bottom = half;
+        }
+
+        public void draw(Canvas canvas) {
+            drawable.setBounds(dst);
+            drawable.setAlpha(alpha);
+            drawable.draw(canvas);
         }
 
     }

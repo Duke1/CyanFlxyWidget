@@ -20,10 +20,9 @@
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
             android:background="#ec98c1"
+            app:CircleAnimateView_animate_duration="1000"
             app:CircleAnimateView_center_image="@drawable/mic"
-            app:CircleAnimateView_center_size="200dp"
-            app:CircleAnimateView_center_x_relative="right"
-            app:CircleAnimateView_center_y_relative="bottom"
+            app:CircleAnimateView_center_size="130dp"
             app:CircleAnimateView_inner_circle_image="@drawable/inner_circle"
             app:CircleAnimateView_max_value="100"
             app:CircleAnimateView_outer_circle_image="@drawable/outer_circle"/>
