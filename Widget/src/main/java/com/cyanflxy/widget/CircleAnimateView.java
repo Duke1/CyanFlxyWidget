@@ -23,6 +23,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -59,6 +60,7 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
     private float centerY;// 绘图中心Y
 
     private float centerSize;// 绘图中心区域大小
+    private float animatorMaxSize;// 动画最大区域
 
     private int duration;// 动画频率
 
@@ -92,14 +94,15 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
         a.recycle();
 
         calculateCenter();
+        animatorMaxSize = centerSize * 3;
 
         if (innerDrawable != null) {
-            innerDrawableHolder = new AnimatorHolder(innerDrawable);
+            innerDrawableHolder = new AnimatorHolder(innerDrawable, (int) centerSize);
             innerCircleAnimator = createInnerAnimator(innerDrawableHolder);
         }
 
         if (outerDrawable != null) {
-            outerDrawableHolder = new AnimatorHolder(outerDrawable);
+            outerDrawableHolder = new AnimatorHolder(outerDrawable, (int) centerSize);
             outerCircleAnimator = createOuterAnimator(this.outerDrawableHolder);
         }
 
@@ -116,7 +119,34 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
             centerSize = 100;
         }
 
+    }
+
+    private void resize() {
         resizeCenterDrawable();
+
+        if (innerDrawableHolder != null) {
+            boolean running = innerCircleAnimator.isStarted();
+            if (running) {
+                innerCircleAnimator.cancel();
+            }
+
+            innerCircleAnimator = createInnerAnimator(innerDrawableHolder);
+            if (running) {
+                innerCircleAnimator.start();
+            }
+        }
+
+        if (outerDrawableHolder != null) {
+            boolean running = outerCircleAnimator.isStarted();
+            if (running) {
+                outerCircleAnimator.cancel();
+            }
+
+            outerCircleAnimator = createOuterAnimator(outerDrawableHolder);
+            if (running) {
+                outerCircleAnimator.start();
+            }
+        }
     }
 
     private void resizeCenterDrawable() {
@@ -133,11 +163,11 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
     }
 
     private Animator createInnerAnimator(AnimatorHolder holder) {
-        PropertyValuesHolder x = PropertyValuesHolder.ofFloat("width", centerSize, centerSize * 3);
-        PropertyValuesHolder y = PropertyValuesHolder.ofFloat("height", centerSize, centerSize * 3);
+        PropertyValuesHolder x = PropertyValuesHolder.ofFloat("width", centerSize, animatorMaxSize);
+        PropertyValuesHolder y = PropertyValuesHolder.ofFloat("height", centerSize, animatorMaxSize);
 
         ValueAnimator animator = ObjectAnimator.ofPropertyValuesHolder(holder, x, y);
-        animator.setDuration(duration);
+        animator.setDuration(500);
         animator.addUpdateListener(this);
         animator.setRepeatMode(ValueAnimator.RESTART);
         animator.setRepeatCount(ValueAnimator.INFINITE);
@@ -148,8 +178,8 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
     }
 
     private Animator createOuterAnimator(AnimatorHolder holder) {
-        PropertyValuesHolder x = PropertyValuesHolder.ofFloat("width", centerSize, centerSize * 3);
-        PropertyValuesHolder y = PropertyValuesHolder.ofFloat("height", centerSize, centerSize * 3);
+        PropertyValuesHolder x = PropertyValuesHolder.ofFloat("width", centerSize, animatorMaxSize);
+        PropertyValuesHolder y = PropertyValuesHolder.ofFloat("height", centerSize, animatorMaxSize);
         PropertyValuesHolder a = PropertyValuesHolder.ofInt("alpha", 255, 50);
 
         ValueAnimator animator = ObjectAnimator.ofPropertyValuesHolder(holder, x, y, a);
@@ -183,10 +213,32 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
         setCenterX(relativeX, shiftX);
         setCenterY(relativeY, shiftY);
 
+        float left = centerX;
+        float right = width - centerX;
+        float top = centerY;
+        float bottom = height - centerY;
+
+        float horizontal = Math.max(left, right);
+        float vertical = Math.max(top, bottom);
+
+        animatorMaxSize = Math.min(horizontal, vertical) * 2;
+
+        resize();
     }
 
     @Override
     public void onAnimationUpdate(ValueAnimator animation) {
+        invalidate();
+    }
+
+    @Override
+    protected void drawableStateChanged() {
+        super.drawableStateChanged();
+
+        if (centerDrawable != null && centerDrawable.isStateful()) {
+            centerDrawable.setState(getDrawableState());
+        }
+
         invalidate();
     }
 
@@ -212,16 +264,20 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
 
     }
 
-
     @Override
     protected void onDetachedFromWindow() {
-        stopListenAni();
+        stopAnimation();
         super.onDetachedFromWindow();
     }
 
     @API
     public void setMaxValue(float max) {
         maxValue = max;
+    }
+
+    @API
+    public float getMaxValue() {
+        return maxValue;
     }
 
     @API
@@ -236,6 +292,11 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
         this.centerY = centerY;
         this.relativeY = RELATIVE_START;
         this.shiftY = centerY;
+    }
+
+    @API
+    public PointF getCenter() {
+        return new PointF(centerX, centerY);
     }
 
     @API
@@ -281,47 +342,48 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
     @API
     public void setCenterSize(float size) {
         centerSize = size;
+        resize();
+    }
 
-        resizeCenterDrawable();
-
-        if (innerDrawableHolder != null) {
-            if (innerCircleAnimator.isRunning()) {
-                innerCircleAnimator.cancel();
-            }
-            innerCircleAnimator = createInnerAnimator(innerDrawableHolder);
-        }
-
-        if (outerDrawableHolder != null) {
-            if (outerCircleAnimator.isRunning()) {
-                outerCircleAnimator.cancel();
-            }
-
-            outerCircleAnimator = createOuterAnimator(outerDrawableHolder);
-        }
+    @API
+    public float getCenterSize() {
+        return centerSize;
     }
 
     @API
     public void setDuration(int duration) {
         this.duration = duration;
-        if (innerCircleAnimator != null) {
-            innerCircleAnimator.setDuration(duration);
-        }
         if (outerCircleAnimator != null) {
             outerCircleAnimator.setDuration(duration);
         }
     }
 
     @API
+    public int getDuration() {
+        return duration;
+    }
+
+    @API
     public void setCenterDrawable(Drawable drawable) {
+        if (centerDrawable != null) {
+            centerDrawable.setCallback(null);
+        }
+
         centerDrawable = drawable;
         resizeCenterDrawable();
+
         invalidate();
+    }
+
+    @API
+    public Drawable getCenterDrawable() {
+        return centerDrawable;
     }
 
     @API
     public void setInnerDrawable(Drawable drawable) {
         if (innerDrawableHolder == null) {
-            innerDrawableHolder = new AnimatorHolder(drawable);
+            innerDrawableHolder = new AnimatorHolder(drawable, (int) centerSize);
             innerCircleAnimator = createInnerAnimator(innerDrawableHolder);
         } else {
             innerDrawableHolder.setDrawable(drawable);
@@ -329,37 +391,74 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
     }
 
     @API
+    public Drawable getInnerDrawable() {
+        if (innerDrawableHolder != null) {
+            return innerDrawableHolder.getDrawable();
+        } else {
+            return null;
+        }
+    }
+
+    @API
     public void setOuterDrawable(Drawable drawable) {
         if (outerDrawableHolder == null) {
-            outerDrawableHolder = new AnimatorHolder(drawable);
+            outerDrawableHolder = new AnimatorHolder(drawable, (int) centerSize);
             outerCircleAnimator = createOuterAnimator(this.outerDrawableHolder);
         } else {
             outerDrawableHolder.setDrawable(drawable);
         }
     }
 
+    @API
+    public Drawable getOuterDrawable() {
+        if (outerDrawableHolder != null) {
+            return outerDrawableHolder.getDrawable();
+        } else {
+            return null;
+        }
+    }
 
     @API
-    public void startListenAni() {
-        if (innerCircleAnimator != null) {
+    public void startAnimation() {
+        if (innerCircleAnimator != null
+                && !innerCircleAnimator.isStarted()) {
             innerAniInterpolator.reset();
             innerCircleAnimator.start();
         }
 
-        if (outerCircleAnimator != null) {
+        if (outerCircleAnimator != null
+                && !outerCircleAnimator.isStarted()) {
             outerCircleAnimator.start();
         }
     }
 
     @API
-    public void stopListenAni() {
-        if (innerCircleAnimator != null) {
+    public void stopAnimation() {
+        if (innerCircleAnimator != null
+                && innerCircleAnimator.isStarted()) {
             innerCircleAnimator.cancel();
         }
 
-        if (outerCircleAnimator != null) {
+        if (outerCircleAnimator != null
+                && outerCircleAnimator.isStarted()) {
             outerCircleAnimator.cancel();
         }
+    }
+
+    @API
+    public boolean isAnimatorRunning() {
+
+        if (innerCircleAnimator != null
+                && innerCircleAnimator.isStarted()) {
+            return true;
+        }
+
+        if (outerCircleAnimator != null
+                && outerCircleAnimator.isStarted()) {
+            return true;
+        }
+
+        return false;
     }
 
     @API
@@ -367,12 +466,12 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
         if (Float.compare(v, 0) < 0 || Float.compare(v, maxValue) > 0) {
             throw new IllegalArgumentException("Value range [0," + maxValue + "],now is " + v);
         }
-        innerAniInterpolator.setVolume(v / maxValue);
+        innerAniInterpolator.setAmplitude(v / maxValue);
     }
 
 
     /**
-     * 内圈动画的插值器，该插值器根据音量产生变化
+     * 内圈动画的插值器，该插值器根据音量产生变化,专用插值器，不做其他用
      *
      * @author yuqiang.xia
      * @since 2014-7-20
@@ -384,13 +483,9 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
          */
         private static final float TIME_SHRINK = 0.8f;
         /**
-         * 普通振动的波谷
+         * 最小振幅
          */
-        private static final float Amplitude_LOW = -0.4f;
-        /**
-         * 动画结束时的波谷
-         */
-        private static final float Amplitude_END = -2.0f;
+        private static final float MIN_AMPLITUDE = 0.1f;
 
         /**
          * 上次输入
@@ -402,17 +497,13 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
         private float mLastOutput;
 
         /**
-         * 时间周期状态，一个周期是1.0+TIME_SHRINK，振幅从-0.1到高峰再回到-0.1
+         * 时间周期状态，一个周期是1.0+TIME_SHRINK，振幅从0到高峰再回到0
          */
         private float mTimeCircle;
         /**
          * 当前周期需要达到的波峰
          */
         private float mHighAmplitude;
-        /**
-         * 当前周期需要达到的波谷
-         */
-        private float mLowAmplitude;
 
         public InnerAniInterpolator() {
             reset();
@@ -420,32 +511,29 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
 
         public void reset() {
             mLastInput = 0.0f;
-            mLastOutput = -1.0f;
+            mLastOutput = 0f;
             mTimeCircle = 0.0f;
-            mHighAmplitude = Amplitude_LOW;
-            mLowAmplitude = Amplitude_LOW;
+            mHighAmplitude = MIN_AMPLITUDE;
         }
 
-        public void setVolume(float volume) {
-            if (Float.compare(volume, 0) == 0) {
+        public void setAmplitude(float am) {
+            if (Float.compare(am, 0) == 0) {
                 return;
             }
 
-            float amplitude = (float) Math.min(volume, 0.7);
-            if (amplitude < mLastOutput) {
+            if (am < mLastOutput) {//低于最近的振幅，则不处理
                 return;
             }
 
             // 改变过小、频率过快，会导致震动频率大，
-            if (Math.abs(amplitude - mHighAmplitude) < 0.05) {
+            if (Math.abs(am - mHighAmplitude) < 0.05) {
                 return;
             }
 
-            mHighAmplitude = amplitude;
+            mHighAmplitude = am;
 
             // 依据当前振幅位置，计算当前周期进行范围
-            mTimeCircle = (mLastOutput - Amplitude_LOW)
-                    / (mHighAmplitude - Amplitude_LOW);
+            mTimeCircle = mLastOutput / mHighAmplitude;
 
         }
 
@@ -460,21 +548,15 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
             }
 
             mTimeCircle += delta;
-            if (mTimeCircle > (1.0f + TIME_SHRINK)) {
+            if (mTimeCircle > (1.0f + TIME_SHRINK)) {//一个周期的结束
                 mTimeCircle = mTimeCircle - 1.0f - TIME_SHRINK;
-                mHighAmplitude = Amplitude_LOW;
-
-                if (mLowAmplitude == Amplitude_END) {
-                    return mLowAmplitude;
-                }
+                mHighAmplitude = MIN_AMPLITUDE;
             }
 
             if (mTimeCircle <= 1.0f) {
-                mLastOutput = (mHighAmplitude - mLowAmplitude) * mTimeCircle
-                        + mLowAmplitude;
+                mLastOutput = mHighAmplitude * mTimeCircle;
             } else {
-                mLastOutput = (mLowAmplitude - mHighAmplitude) / TIME_SHRINK
-                        * (mTimeCircle - 1.0f) + mHighAmplitude;
+                mLastOutput = mHighAmplitude - mHighAmplitude * (mTimeCircle - 1.0f) / TIME_SHRINK;
             }
 
             mLastInput = input;
@@ -483,18 +565,24 @@ public class CircleAnimateView extends View implements ValueAnimator.AnimatorUpd
 
     }
 
-    class AnimatorHolder {
+    private static class AnimatorHolder {
         private Drawable drawable;
         private int alpha = 255;
         private Rect dst;
 
-        public AnimatorHolder(Drawable d) {
+        public AnimatorHolder(Drawable d, int size) {
             drawable = d;
-            dst = new Rect();
+            int half = size / 2;
+            dst = new Rect(-half, -half, half, half);
         }
 
         public void setDrawable(Drawable d) {
+            drawable.setCallback(null);
             drawable = d;
+        }
+
+        public Drawable getDrawable() {
+            return drawable;
         }
 
         @ReflectInvoke(invokeBy = "API")

@@ -15,6 +15,7 @@ import java.io.IOException;
 public class CircleAnimationActivity extends Activity implements View.OnClickListener {
 
     private RecordThread recordThread;
+    private CircleAnimateView circleAnimateView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,11 +28,12 @@ public class CircleAnimationActivity extends Activity implements View.OnClickLis
         title.setText("CircleAnimation");
         findViewById(R.id.back).setOnClickListener(this);
 
-        CircleAnimateView circleAnimateView = (CircleAnimateView) findViewById(R.id.circle_animation);
-        circleAnimateView.startListenAni();
+        circleAnimateView = (CircleAnimateView) findViewById(R.id.circle_animation);
 
         recordThread = new RecordThread(circleAnimateView);
-        recordThread.start();
+
+        findViewById(R.id.start).setOnClickListener(this);
+        findViewById(R.id.stop).setOnClickListener(this);
 
     }
 
@@ -41,11 +43,18 @@ public class CircleAnimationActivity extends Activity implements View.OnClickLis
         super.onDestroy();
     }
 
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.back:
                 finish();
+                break;
+            case R.id.start:
+                circleAnimateView.startAnimation();
+                break;
+            case R.id.stop:
+                circleAnimateView.stopAnimation();
                 break;
         }
     }
@@ -68,11 +77,12 @@ public class CircleAnimationActivity extends Activity implements View.OnClickLis
 
                 @Override
                 public void onError(MediaRecorder mr, int what, int extra) {
-                    Log.i("xyq", " error=" + what + " ex=" + extra);
+                    Log.i("AnimationActivity", " error=" + what + " ex=" + extra);
                 }
             });
 
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            //noinspection deprecation
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
             mediaRecorder.setOutputFile(getFilesDir().getPath() + "/hello_world.amr");
@@ -85,7 +95,7 @@ public class CircleAnimationActivity extends Activity implements View.OnClickLis
             try {
                 mediaRecorder.prepare();
             } catch (IOException e) {
-                Log.i("xyq", "prepare error:", e);
+                Log.i("AnimationActivity", "prepare error:", e);
                 return;
             }
 
@@ -93,7 +103,7 @@ public class CircleAnimationActivity extends Activity implements View.OnClickLis
 
             while (isRun) {
                 int amplitude = mediaRecorder.getMaxAmplitude();
-                Log.i("xyq", "Max Amplitude:" + amplitude);
+                Log.i("AnimationActivity", "Max Amplitude:" + amplitude);
 
                 float value = amplitude / 200f;
                 if (Float.compare(value, 100f) > 0) {

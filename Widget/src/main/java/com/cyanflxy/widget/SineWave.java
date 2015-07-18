@@ -28,6 +28,8 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowManager;
 
+import com.cyanflxy.annotation.API;
+
 /**
  * Siri那样的随声音变化的正弦波动
  * <p/>
@@ -167,60 +169,73 @@ public class SineWave extends View {
         return spec;
     }
 
+    @API
     public void setMaxValue(float value) {
         maxValue = value;
     }
 
+    @API
     public float getMaxValue() {
         return maxValue;
     }
 
+    @API
     public void setPeriod(float p) {
         period = p;
     }
 
+    @API
     public float getPeriod() {
         return period;
     }
 
+    @API
     public void setMinAmplitude(float amplitude) {
         minAmplitude = amplitude;
     }
 
+    @API
     public void setHorizontalSpeed(float speed) {
         horizontalSpeed = speed;
     }
 
+    @API
     public float getHorizontalSpeed() {
         return horizontalSpeed;
     }
 
+    @API
     public void setVerticalSpeed(float speed) {
         verticalSpeed = speed;
     }
 
-
+    @API
     public float getVerticalSpeed() {
         return verticalSpeed;
     }
 
+    @API
     public void setVerticalRestoreSpeed(float speed) {
         verticalRestoreSpeed = speed;
     }
 
+    @API
     public float getVerticalRestoreSpeed() {
         return verticalRestoreSpeed;
     }
 
+    @API
     public void setWaveColor(int color) {
         paint.setColor(color);
         waveColor = color;
     }
 
+    @API
     public int getWaveColor() {
         return waveColor;
     }
 
+    @API
     public void setAmplitudeAlgorithm(AmplitudeAlgorithm algorithm) {
         if (algorithm == null) {
             throw new NullPointerException("AmplitudeAlgorithm is null.");
@@ -228,6 +243,7 @@ public class SineWave extends View {
         amplitudeAlgorithm = algorithm;
     }
 
+    @API
     public void setValue(float value) {
         if (Float.compare(value, 0) < 0 || Float.compare(value, maxValue) > 0) {
             throw new IllegalArgumentException("Value range [0," + maxValue + "],now is " + value);
@@ -247,6 +263,7 @@ public class SineWave extends View {
 
     }
 
+    @API
     public void startAni() {
         phase = 0;
         volumeAmplitude = minAmplitude;
@@ -259,6 +276,7 @@ public class SineWave extends View {
         moveThread.start();
     }
 
+    @API
     public void stopAni() {
         if (moveThread != null) {
             moveThread.stopRunning();
@@ -417,6 +435,7 @@ public class SineWave extends View {
         float amplitude(float value);
     }
 
+    @API
     public static class SimpleAmplitudeAlgorithm implements AmplitudeAlgorithm {
 
         @Override
@@ -428,6 +447,7 @@ public class SineWave extends View {
     /**
      * 倒数算法
      */
+    @API
     public static class ReciprocalAmplitudeAlgorithm implements AmplitudeAlgorithm {
 
         @Override

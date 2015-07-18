@@ -9,6 +9,24 @@
 
     <include layout="@layout/activity_title"/>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开始"/>
+
+        <Button
+            android:id="@+id/stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="暂停"/>
+
+    </LinearLayout>
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -20,6 +38,7 @@
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
             android:background="#ec98c1"
+            android:clickable="true"
             app:CircleAnimateView_animate_duration="1000"
             app:CircleAnimateView_center_image="@drawable/mic"
             app:CircleAnimateView_center_size="130dp"
