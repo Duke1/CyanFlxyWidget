@@ -17,13 +17,13 @@
             android:id="@+id/start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="开始"/>
+            android:text="@string/start"/>
 
         <Button
             android:id="@+id/stop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="暂停"/>
+            android:text="@string/stop"/>
 
     </LinearLayout>
 

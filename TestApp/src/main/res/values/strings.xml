@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">Test</string>
+    <string name="add_header">Add Header</string>
+    <string name="remove_header">Remove Header</string>
+    <string name="disable_long_clickable">Disable Long Click</string>
+    <string name="enable_long_click">Enable Long Click</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
 
 </resources>

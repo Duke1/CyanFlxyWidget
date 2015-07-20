@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include layout="@layout/activity_title"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/add_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/add_header"/>
+
+        <Button
+            android:id="@+id/remove_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/remove_header"/>
+
+        <Button
+            android:id="@+id/long_clickable"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/disable_long_clickable"/>
+
+    </LinearLayout>
+
+    <com.cyanflxy.widget.ListViewCompat
+        android:id="@+id/list_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </com.cyanflxy.widget.ListViewCompat>
+
+</LinearLayout>

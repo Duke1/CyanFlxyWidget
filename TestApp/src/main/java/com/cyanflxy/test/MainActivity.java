@@ -28,6 +28,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         ListView list = (ListView) findViewById(R.id.list);
         list.setAdapter(new MyAdapter());
         list.setOnItemClickListener(this);
+
+        startActivity(new Intent(this, ListViewCompatActivity.class));
     }
 
     private void initActivityList() {
@@ -35,6 +37,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         activityList.add(new ActivityInfo(ColorPickerActivity.class));
         activityList.add(new ActivityInfo(SineWaveActivity.class));
         activityList.add(new ActivityInfo(CircleAnimationActivity.class));
+        activityList.add(new ActivityInfo(ListViewCompatActivity.class));
     }
 
     @Override
