@@ -17,7 +17,10 @@ Usage：RTFSC.
 
 ![SineWave](ScreenShot/SineWave.gif)
 
+###CircleAnimateView
+像Google语音那样的环形波纹效果
 
+![CircleAnimateView](ScreenShot/CircleAnimateView.gif)
 
 
 ## License

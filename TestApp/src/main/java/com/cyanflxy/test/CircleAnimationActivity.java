@@ -31,6 +31,7 @@ public class CircleAnimationActivity extends Activity implements View.OnClickLis
         circleAnimateView = (CircleAnimateView) findViewById(R.id.circle_animation);
 
         recordThread = new RecordThread(circleAnimateView);
+        recordThread.start();
 
         findViewById(R.id.start).setOnClickListener(this);
         findViewById(R.id.stop).setOnClickListener(this);
