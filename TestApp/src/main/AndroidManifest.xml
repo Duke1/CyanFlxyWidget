@@ -23,6 +23,7 @@
         <activity android:name=".SineWaveActivity"/>
         <activity android:name=".CircleAnimationActivity"/>
         <activity android:name=".ListViewCompatActivity"/>
+        <activity android:name=".SimulateTurnActivity"/>
     </application>
 
 </manifest>

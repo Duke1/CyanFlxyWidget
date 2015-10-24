@@ -29,7 +29,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         list.setAdapter(new MyAdapter());
         list.setOnItemClickListener(this);
 
-        startActivity(new Intent(this, ListViewCompatActivity.class));
     }
 
     private void initActivityList() {
@@ -38,6 +37,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         activityList.add(new ActivityInfo(SineWaveActivity.class));
         activityList.add(new ActivityInfo(CircleAnimationActivity.class));
         activityList.add(new ActivityInfo(ListViewCompatActivity.class));
+        activityList.add(new ActivityInfo(SimulateTurnActivity.class));
     }
 
     @Override

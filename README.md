@@ -22,6 +22,11 @@ Usage：RTFSC.
 
 ![CircleAnimateView](ScreenShot/CircleAnimateView.gif)
 
+###SimulatePageTurner
+仿真翻页效果
+
+![SimulatePageTurner](ScreenShot/SimulatePageTurner.png)
+
 
 ## License
 
