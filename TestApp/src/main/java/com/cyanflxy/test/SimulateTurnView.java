@@ -69,7 +69,7 @@ public class SimulateTurnView extends View implements SimulatePageTurner.OnBitma
     }
 
     private Bitmap getBitmap(int index) {
-        Log.i("xyq","get bitmap index "+index);
+        Log.i("xyq", "get bitmap index " + index);
         if (bitmapAdapter == null) {
             return null;
         }
@@ -133,6 +133,8 @@ public class SimulateTurnView extends View implements SimulatePageTurner.OnBitma
             if (currentIndex < bitmapAdapter.getCount()) {
                 currentIndex++;
             }
+        } else if (turnType == SimulatePageTurner.TURN_TYPE_PREV && turnResult == SimulatePageTurner.TURN_FAIL) {
+            currentIndex++;
         }
     }
 }

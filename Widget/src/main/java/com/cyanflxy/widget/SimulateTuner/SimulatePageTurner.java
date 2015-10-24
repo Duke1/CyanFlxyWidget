@@ -370,7 +370,12 @@ public class SimulatePageTurner {
             int dx = (int) (interval * turner.mAutoFlipSpeed / 1000f);
             mTouchX = mTouchX + dx * mDirect;
 
-            if (mTouchX > -mWidth && mTouchX < mWidth) {
+            int minLeft = -mWidth;
+            if(mDirect < 0 && turner.mTurnType == TURN_TYPE_PREV){
+                minLeft = 0;
+            }
+
+            if (mTouchX > minLeft && mTouchX < mWidth) {
                 mLastTime = current;
                 turner.onTouchMove(mTouchX, mTouchY);
                 sendEmptyMessageDelayed(0, AUTO_FLIP_INTERVAL);
