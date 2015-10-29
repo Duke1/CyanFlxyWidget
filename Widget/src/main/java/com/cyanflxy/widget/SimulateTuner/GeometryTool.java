@@ -9,6 +9,9 @@ public class GeometryTool {
 
     public static class Line {
 
+        /**
+         * 创建a0,b0两点的中线
+         */
         public static Line createMiddleLine(PointF a0, PointF b0) {
             float a = 2 * (b0.x - a0.x);
             float b = 2 * (b0.y - a0.y);
@@ -20,9 +23,13 @@ public class GeometryTool {
          * 创建过两点p1,p2的直线
          */
         public static Line createLine(PointF p1, PointF p2) {
-            float a = p1.y - p2.y;
-            float b = p2.x - p1.x;
-            float c = p1.x * (p1.y - p2.y) - p1.y * (p1.x - p2.x);
+            return createLine(p1.x, p1.y, p2.x, p2.y);
+        }
+
+        public static Line createLine(float x1, float y1, float x2, float y2) {
+            float a = y1 - y2;
+            float b = x2 - x1;
+            float c = x1 * (y1 - y2) - y1 * (x1 - x2);
 
             return new Line(a, b, c);
         }

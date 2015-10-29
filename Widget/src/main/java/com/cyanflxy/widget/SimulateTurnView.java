@@ -1,10 +1,9 @@
-package com.cyanflxy.test;
+package com.cyanflxy.widget;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
@@ -69,7 +68,6 @@ public class SimulateTurnView extends View implements SimulatePageTurner.OnBitma
     }
 
     private Bitmap getBitmap(int index) {
-        Log.i("xyq", "get bitmap index " + index);
         if (bitmapAdapter == null) {
             return null;
         }
@@ -96,26 +94,18 @@ public class SimulateTurnView extends View implements SimulatePageTurner.OnBitma
     }
 
     @Override
-    public Bitmap getTopBitmap() {
+    public Bitmap getCurrentBitmap() {
         return getBitmap(currentIndex);
     }
 
     @Override
-    public Bitmap getBottomBitmap() {
-        return getBitmap(currentIndex + 1);
+    public Bitmap getPreviousBitmap() {
+        return getBitmap(currentIndex - 1);
     }
 
     @Override
-    public void setTurnType(int type) {
-        if (type == SimulatePageTurner.TURN_TYPE_PREV) {
-            if (currentIndex >= 0) {
-                currentIndex--;
-            }
-        } else {
-            if (currentIndex < 0) {
-                currentIndex = 0;
-            }
-        }
+    public Bitmap getNextBitmap() {
+        return getBitmap(currentIndex + 1);
     }
 
     @Override
@@ -124,17 +114,19 @@ public class SimulateTurnView extends View implements SimulatePageTurner.OnBitma
     }
 
     @Override
-    public void onTurningEnd(int turnType, int turnResult) {
+    public void onTurningEnd(int turnType) {
         if (bitmapAdapter == null) {
             return;
         }
 
-        if (turnType == SimulatePageTurner.TURN_TYPE_NEXT && turnResult == SimulatePageTurner.TURN_SUCCESS) {
-            if (currentIndex < bitmapAdapter.getCount()) {
+        if (turnType == SimulatePageTurner.TURN_TYPE_NEXT) {
+            if (currentIndex < bitmapAdapter.getCount() - 1) {
                 currentIndex++;
             }
-        } else if (turnType == SimulatePageTurner.TURN_TYPE_PREV && turnResult == SimulatePageTurner.TURN_FAIL) {
-            currentIndex++;
+        } else if (turnType == SimulatePageTurner.TURN_TYPE_PREV) {
+            if (currentIndex > 0) {
+                currentIndex--;
+            }
         }
     }
 }

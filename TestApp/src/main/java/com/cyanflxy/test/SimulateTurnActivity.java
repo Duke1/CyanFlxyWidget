@@ -3,10 +3,16 @@ package com.cyanflxy.test;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.view.Window;
 
+import com.cyanflxy.widget.SimulateTurnView;
+
 public class SimulateTurnActivity extends Activity {
+
+    private SimulateTurnView simulateTurnView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -14,7 +20,7 @@ public class SimulateTurnActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);//去掉标题栏
         setContentView(R.layout.activity_simulate_turn);
 
-        SimulateTurnView simulateTurnView = (SimulateTurnView) findViewById(R.id.simulate_turn_view);
+        simulateTurnView = (SimulateTurnView) findViewById(R.id.simulate_turn_view);
         simulateTurnView.setBitmapAdapter(new MyBitmapAdapter());
     }
 
@@ -29,7 +35,18 @@ public class SimulateTurnActivity extends Activity {
 
         @Override
         public Bitmap getBitmap(int index) {
-            return BitmapFactory.decodeResource(getResources(), ids[index]);
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), ids[index]);
+
+            int w = simulateTurnView.getWidth();
+            int h = simulateTurnView.getHeight();
+            Bitmap sizedBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
+            Canvas canvas = new Canvas(sizedBitmap);
+
+            RectF drawRect = new RectF(0, 0, w, h);
+            canvas.drawBitmap(bitmap, null, drawRect, null);
+            bitmap.recycle();
+
+            return sizedBitmap;
         }
     }
 }

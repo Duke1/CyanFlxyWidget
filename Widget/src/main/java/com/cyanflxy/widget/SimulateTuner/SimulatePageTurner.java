@@ -3,11 +3,12 @@ package com.cyanflxy.widget.SimulateTuner;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.os.Handler;
 import android.os.Message;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+
+import com.cyanflxy.widget.SimulateTuner.GeometryTool.Line;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -34,42 +35,32 @@ public class SimulatePageTurner {
      * 翻到下一页
      */
     public static final int TURN_TYPE_NEXT = -1;
-
-    /**
-     * 翻页成功
-     */
-    public static final int TURN_SUCCESS = 1;
     /**
      * 没有翻页
      */
-    public static final int TURN_FAIL = 0;
+    public static final int TURN_TYPE_NONE = 0;
 
     public interface OnBitmapTurnListener {
-        Bitmap getTopBitmap();
 
-        Bitmap getBottomBitmap();
+        Bitmap getCurrentBitmap();
 
-        /**
-         * 通知翻页状态
-         * {@link #TURN_TYPE_PREV}, {@link #TURN_TYPE_NEXT}
-         *
-         * @param type 翻到上一页或者下一页
-         */
-        void setTurnType(int type);
+        Bitmap getPreviousBitmap();
+
+        Bitmap getNextBitmap();
 
         void invalidatePage();
 
         /**
          * 通知翻页结果:
          *
-         * @param turnType   翻到上一页，下一页或者是没有翻页, {@link #TURN_TYPE_PREV}, {@link #TURN_TYPE_NEXT}
-         * @param turnResult 翻页是否成功, {@link #TURN_SUCCESS}, {@link #TURN_FAIL}
+         * @param turnType 翻到上一页，下一页或者, {@link #TURN_TYPE_PREV}, {@link #TURN_TYPE_NEXT}
          */
-        void onTurningEnd(int turnType, int turnResult);
+        void onTurningEnd(int turnType);
     }
 
     private static final int AUTO_FLIP_INTERVAL = 10;// 自动翻页效果动画毫秒
     private float mDefaultFlipSpeed = 1200;// px/s 依赖像素密度！！
+
     private float mAutoFlipSpeed;
 
     private Bitmap mTopBitmap;
@@ -84,13 +75,10 @@ public class SimulatePageTurner {
 
     private int mWidth;
     private int mTurnType;
-    private int mTurnResult;
     private boolean isTurning;
-    private boolean isSendTurnType;
 
     private float mLastTouchX;
     private float mLastDx;
-    private boolean isFirstMove;
 
     public SimulatePageTurner(Context c) {
         mSimulatePageShape = new SimulatePageShape(c);
@@ -116,41 +104,13 @@ public class SimulatePageTurner {
         if (isTurning) {
 
             mSimulatePageShape.calculateShape();
+            mSimulatePageShape.draw(canvas, mTopBitmap, mBottomBitmap, mBackgroundColor, mDayMode);
 
-            // 底部图片
-            canvas.save();
-            if (mSimulatePageShape.prepareBottom(canvas)) {
-                canvas.drawBitmap(mBottomBitmap, 0, 0, null);
-            }
-            canvas.restore();
-
-            //顶部图片
-            canvas.save();
-            if (mSimulatePageShape.prepareTop(canvas)) {
-                canvas.drawBitmap(mTopBitmap, 0, 0, null);
-            }
-            canvas.restore();
-
-            // 翻角部分
-            canvas.save();
-            Matrix matrix = mSimulatePageShape.prepareCorner(canvas);
-            if (matrix != null) {
-                canvas.drawColor(mBackgroundColor | 0xFF000000);
-                canvas.drawBitmap(mTopBitmap, matrix, null);
-                canvas.drawColor(mBackgroundColor);
-            }
-            canvas.restore();
-
-            mSimulatePageShape.drawShadow(canvas, mDayMode);
         } else {
             if (mOnBitmapTurnListener != null) {
-                mTopBitmap = mOnBitmapTurnListener.getTopBitmap();
-                mBottomBitmap = mOnBitmapTurnListener.getBottomBitmap();
-
+                mTopBitmap = mOnBitmapTurnListener.getCurrentBitmap();
                 if (mTopBitmap != null) {
                     canvas.drawBitmap(mTopBitmap, 0, 0, null);
-                } else if (mBottomBitmap != null) {
-                    canvas.drawBitmap(mBottomBitmap, 0, 0, null);
                 }
             }
         }
@@ -179,7 +139,6 @@ public class SimulatePageTurner {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                isSendTurnType = false;
                 onTouchDown(x, y);
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -197,29 +156,29 @@ public class SimulatePageTurner {
     }
 
     private void onTouchDown(float x, float y) {
+        if (isTurning) {
+            onEnd();
+        }
         mSimulatePageShape.setOnTouchDownPoint(x, y);
         mLastTouchX = x;
-        isFirstMove = true;
+        mLastDx = 0;
     }
 
     private void onTouchMove(float x, float y) {
         mSimulatePageShape.setOnTouch(x, y);
         float dx = x - mLastTouchX;
 
-        if (isFirstMove) {
+        if (mLastDx == 0 && dx != 0) {
             int sig = (int) Math.signum(dx);
-            if (sig != 0) {
-                isFirstMove = false;
-                onTurn(sig);
-                isTurning = canTurn();
-            }
-        } else {
-            if (dx != 0) {
-                mLastDx = dx;
-            }
+            onTurn(sig);
+            isTurning = canTurn();
         }
 
-        mLastTouchX = x;
+        if (dx != 0) {
+            mLastDx = dx;
+            mLastTouchX = x;
+        }
+
         if (isTurning) {
             mOnBitmapTurnListener.invalidatePage();
         }
@@ -230,37 +189,47 @@ public class SimulatePageTurner {
         mSimulatePageShape.setOnTouch(x, y);
 
         int dir = (int) Math.signum(mLastDx);
-        if (dir == mTurnType) {
-            mTurnResult = TURN_SUCCESS;
-        } else {
-            mTurnResult = TURN_FAIL;
-        }
+        mTurnType = (mTurnType + dir) / 2;
+
         mHandler.start(x, y, dir);
     }
 
+    private void onAutoMove(float x, float y) {
+        mSimulatePageShape.setOnTouch(x, y);
+        mOnBitmapTurnListener.invalidatePage();
+    }
+
     private void onEnd() {
+        mHandler.stop();
         mAutoFlipSpeed = mDefaultFlipSpeed;
         isTurning = false;
         if (mOnBitmapTurnListener != null) {
+            mOnBitmapTurnListener.onTurningEnd(mTurnType);
             mOnBitmapTurnListener.invalidatePage();
         }
     }
 
-    private void sendTurnResult() {
-        if (mOnBitmapTurnListener != null) {
-            mOnBitmapTurnListener.onTurningEnd(mTurnType, mTurnResult);
+    private void onTurn(int turnType) {
+        if (turnType == TURN_TYPE_PREV) {
+            onTurnPrevious();
+        } else {
+            onTurnNext();
         }
     }
 
-    private void onTurn(int turnType) {
-        mTurnType = turnType;
+    private void onTurnPrevious() {
+        mTurnType = TURN_TYPE_PREV;
         if (mOnBitmapTurnListener != null) {
-            if (!isSendTurnType) {
-                isSendTurnType = true;
-                mOnBitmapTurnListener.setTurnType(turnType);
-                mTopBitmap = mOnBitmapTurnListener.getTopBitmap();
-                mBottomBitmap = mOnBitmapTurnListener.getBottomBitmap();
-            }
+            mTopBitmap = mOnBitmapTurnListener.getPreviousBitmap();
+            mBottomBitmap = mOnBitmapTurnListener.getCurrentBitmap();
+        }
+    }
+
+    private void onTurnNext() {
+        mTurnType = TURN_TYPE_NEXT;
+        if (mOnBitmapTurnListener != null) {
+            mTopBitmap = mOnBitmapTurnListener.getCurrentBitmap();
+            mBottomBitmap = mOnBitmapTurnListener.getNextBitmap();
         }
     }
 
@@ -286,12 +255,11 @@ public class SimulatePageTurner {
             float x = e.getX();
             float y = e.getY();
 
-            mTurnResult = TURN_SUCCESS;
             if (x < mWidth / 2) {
-                onTurn(TURN_TYPE_PREV);
+                onTurnPrevious();
                 mHandler.start(x, y, 1);
             } else {
-                onTurn(TURN_TYPE_NEXT);
+                onTurnNext();
                 mHandler.start(x, y, -1);
             }
 
@@ -328,6 +296,9 @@ public class SimulatePageTurner {
         private int mDirect;
         private long mLastTime;
 
+        private float mMinLeft;
+        private Line mMoveLine;
+
         public AutoFlipHandler(SimulatePageTurner turner) {
             mTunerReference = new SoftReference<SimulatePageTurner>(turner);
         }
@@ -347,7 +318,6 @@ public class SimulatePageTurner {
                 return;
             }
 
-            turner.sendTurnResult();
             turner.isTurning = true;
 
             mTouchX = x;
@@ -355,7 +325,35 @@ public class SimulatePageTurner {
             mDirect = direct;
             mLastTime = System.currentTimeMillis();
 
+            calculate(turner);
+
             sendEmptyMessage(0);
+        }
+
+        private void calculate(SimulatePageTurner turner) {
+            float targetX;
+            float targetY = turner.mSimulatePageShape.getStartPoint().y;
+
+            if (mDirect > 0) {//右划
+                targetX = mWidth;
+                mMinLeft = -mWidth;
+            } else {//左划
+                if (turner.mTurnType == TURN_TYPE_NONE) {
+                    targetX = 0;
+                } else {
+                    targetX = -mWidth * 0.5f;
+                }
+
+                mMinLeft = targetX;
+            }
+
+            mMoveLine = Line.createLine(mTouchX, mTouchY, targetX, targetY);
+        }
+
+        public void stop() {
+            if (hasMessages(0)) {
+                removeMessages(0);
+            }
         }
 
         @Override
@@ -368,16 +366,13 @@ public class SimulatePageTurner {
             long current = System.currentTimeMillis();
             long interval = current - mLastTime;
             int dx = (int) (interval * turner.mAutoFlipSpeed / 1000f);
+
             mTouchX = mTouchX + dx * mDirect;
+            mTouchY = mMoveLine.getY(mTouchX);
 
-            int minLeft = -mWidth;
-            if(mDirect < 0 && turner.mTurnType == TURN_TYPE_PREV){
-                minLeft = 0;
-            }
-
-            if (mTouchX > minLeft && mTouchX < mWidth) {
+            if (mTouchX > mMinLeft && mTouchX < mWidth) {
                 mLastTime = current;
-                turner.onTouchMove(mTouchX, mTouchY);
+                turner.onAutoMove(mTouchX, mTouchY);
                 sendEmptyMessageDelayed(0, AUTO_FLIP_INTERVAL);
             } else {
                 turner.onEnd();

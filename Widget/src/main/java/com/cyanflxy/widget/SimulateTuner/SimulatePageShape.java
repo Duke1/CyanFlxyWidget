@@ -1,6 +1,7 @@
 package com.cyanflxy.widget.SimulateTuner;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
@@ -54,6 +55,10 @@ public class SimulatePageShape {
 
     public SimulatePageShape(Context c) {
         SHADOW_MAX_WIDTH = dip2px(c, 10);
+    }
+
+    public PointF getStartPoint() {
+        return mStartPoint;
     }
 
     public void setSize(float w, float h) {
@@ -280,6 +285,35 @@ public class SimulatePageShape {
 
     }
 
+    public void draw(Canvas canvas, Bitmap topBitmap, Bitmap bottomBitmap, int bgColor, int shadowMode) {
+
+        // 底部图片
+        canvas.save();
+        if (prepareBottom(canvas)) {
+            canvas.drawBitmap(bottomBitmap, 0, 0, null);
+        }
+        canvas.restore();
+
+        //顶部图片
+        canvas.save();
+        if (prepareTop(canvas)) {
+            canvas.drawBitmap(topBitmap, 0, 0, null);
+        }
+        canvas.restore();
+
+        // 翻角部分
+        canvas.save();
+        Matrix matrix = prepareCorner(canvas);
+        if (matrix != null) {
+            canvas.drawColor(bgColor | 0xFF000000);
+            canvas.drawBitmap(topBitmap, matrix, null);
+            canvas.drawColor(bgColor);
+        }
+        canvas.restore();
+
+        drawShadow(canvas, shadowMode);
+    }
+
     public boolean prepareTop(Canvas canvas) {
         return canvas.clipPath(mBezierPath, Region.Op.XOR);
     }
@@ -375,7 +409,6 @@ public class SimulatePageShape {
             canvas.restore();
         }
         canvas.restore();
-
 
         canvas.save();
         if (canvas.clipPath(mBezierPath)) {
